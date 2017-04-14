@@ -1,0 +1,10 @@
+Cython==0.25.2
+Flask==0.12
+geocoder==1.17.5
+geopandas==0.2.1
+networkx==1.11
+numpy==1.11.2
+Rtree==0.8.2
+pickleshare==0.7.4
+Shapely==1.5.17
+scipy

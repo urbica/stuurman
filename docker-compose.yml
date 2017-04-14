@@ -1,0 +1,14 @@
+version: '2'
+
+services:
+  stuurman:
+    build: .
+    container_name: stuurman
+    restart: always
+    environment:
+      - VIRTUAL_HOST=stuurman.urbica.co
+
+networks:
+  default:
+    external:
+      name: production-network

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+   <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+   <style>
+      #mapid {
+         width: 100%;
+         height: 100vh;
+      }
+   </style>
+</head>
+<body>
+   <div id="mapid"></div>
+   <script>
+      var mymap = L.map('mapid').setView([55.75,37.65], 13);
+      
+      L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+         maxZoom: 18,
+         id: 'mapbox.streets'
+      }).addTo(mymap);
+
+
+      const markerStart = L.marker([55.75, 37.67], {draggable:'true'})
+                           .addTo(mymap);
+      const markerFinish = L.marker([55.77, 37.69], {draggable:'true'})
+                           .addTo(mymap);
+      var myStyle = {
+         "color": "#ff7800",
+         "weight": 5,
+         "opacity": 0.65 
+                     };
+
+      var url = '/route';
+
+      var params = {
+            x1: 37.69,
+            y1: 55.75,
+            x2: 37.69,
+            y2: 55.77
+               };
+      var d = new FormData();
+      d.append( "json", JSON.stringify( params ) );
+      var myLayer = L.geoJSON().addTo(mymap);
+      fetch(url, {  
+         method: 'POST', 
+         mode: 'cors',
+         headers: {
+         'Access-Control-Allow-Origin':'*',
+         'Content-Type': 'application/json',
+         Accept: 'application/json',
+         },
+         body: JSON.stringify(params)
+            })
+            .then (function(response) {return response.json();
+               })
+            .then( function(resp) {
+               //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
+               myLayer.addData(resp);
+               });
+      //var myLayer = L.geoJSON().addTo(mymap);
+      //myLayer.addData(geojsonFeature);
+
+       markerStart.on('dragend',
+         function(event){
+            var marker = event.target;
+            var startPosition = marker.getLatLng();
+            var params = {
+            x1: startPosition.lng,
+            y1: startPosition.lat,
+            x2: markerFinish.getLatLng().lng,
+            y2: markerFinish.getLatLng().lat
+               };
+
+            var d = new FormData();
+            d.append( "json", JSON.stringify( params ) );
+            fetch(url, {  
+               method: 'POST', 
+               mode: 'cors',
+               headers: {
+               'Access-Control-Allow-Origin':'*',
+               'Content-Type': 'application/json',
+               Accept: 'application/json',
+               },
+               body: JSON.stringify(params)
+                  })
+                  .then (function(response) {return response.json();
+                     })
+                  .then( function(resp) {
+                     //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
+                     myLayer.clearLayers();
+                     myLayer.addData(resp);
+                     });
+                  console.log('startPosition', startPosition);
+               }
+      );
+
+       markerFinish.on('dragend',
+         function(event){
+            var marker = event.target;
+            var finishPosition = marker.getLatLng();
+            var params = {
+            x1: markerStart.getLatLng().lng,
+            y1: markerStart.getLatLng().lat,
+            x2: finishPosition.lng,
+            y2: finishPosition.lat
+               };
+
+            var d = new FormData();
+            d.append( "json", JSON.stringify( params ) );
+            fetch(url, {  
+               method: 'POST', 
+               mode: 'cors',
+               headers: {
+               'Access-Control-Allow-Origin':'*',
+               'Content-Type': 'application/json',
+               Accept: 'application/json',
+               },
+               body: JSON.stringify(params)
+                  })
+                  .then (function(response) {return response.json();
+                     })
+                  .then( function(resp) {
+                     //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
+                     myLayer.clearLayers();
+                     myLayer.addData(resp);
+                     });
+            console.log('finishPosition', finishPosition);
+         }
+      );
+
+   </script>
+</body>   
+</html>

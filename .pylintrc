@@ -1,0 +1,7 @@
+[MESSAGES CONTROL]
+
+# Sometimes disabled depending on how bad a module is
+#   C0111 = Missing docstring
+
+# Disable the message(s) with the given id(s).
+disable=C0111,C0103,E0401
