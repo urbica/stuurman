@@ -12,9 +12,9 @@ from functions import bidirectional_dijkstra
 
 path = os.path.dirname(os.path.realpath(__file__))
 
-with open(path+'/static/edges_osm.pickle','r') as f:
+with open(path+'/graphs/edges_osm.pickle','r') as f:
     edges = pickle.load(f)
-with open(path+'/static/nodes_osm.pickle','r') as f:
+with open(path+'/graphs/nodes_osm.pickle','r') as f:
     nodes = pickle.load(f)
 
 coords={}
