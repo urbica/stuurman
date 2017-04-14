@@ -7,6 +7,8 @@ services:
     restart: always
     environment:
       - VIRTUAL_HOST=stuurman.urbica.co
+    volumes:
+      - ./graphs:/usr/src/app/graphs
 
 networks:
   default:
