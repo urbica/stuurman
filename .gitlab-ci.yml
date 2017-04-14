@@ -11,9 +11,9 @@ deploy:
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
   script:
-    - ssh urbica@sergeygo-router.urbica.co 'bash -s' < deploy.sh
+    - ssh urbica@stuurman.urbica.co 'bash -s' < deploy.sh
   environment:
     name: production
-    url: http://sergeygo-router.urbica.co
+    url: http://stuurman.urbica.co
   only:
     - master
