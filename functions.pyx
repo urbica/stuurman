@@ -4,7 +4,6 @@ from math import pow
 import networkx as nx
 from heapq import heappop, heappush
 from rtree import index
-import folium
 import geocoder
 from shapely.ops import linemerge
 import geopandas as gp
