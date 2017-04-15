@@ -8,7 +8,7 @@ from rtree import index
 import pyximport
 pyximport.install()
 
-from functions import bidirectional_dijkstra
+from functions import bidirectional_dijkstra, set_spatial_index
 
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -18,32 +18,40 @@ with open(path+'/graphs/nodes_osm.pickle','r') as f:
     nodes = pickle.load(f)
 
 coords={}
-nodes = nodes[(nodes.NO.isin(edges.FROMNODENO.values))|(nodes.NO.isin(edges.TONODENO.values))]
-
 for x in range(nodes.shape[0]):
     coord = (nodes.geometry.values[x].x,nodes.geometry.values[x].y)
     id = nodes.id.values[x]
     coords[id] = coord
-    
+
+
+d = {}
+indexes = []
+for x in range(edges.shape[0]):
+    s = edges['source'].values[x]
+    t = edges['target'].values[x]
+    weight = edges['cost'].values[x]
+    if (s,t) not in d:
+        d[(s,t)] = weight
+    else:
+        if d[(s,t)]>weight:
+            d[(s,t)] = weight
+        else:
+            indexes.append(x)
+
+edges = edges.drop(edges.index[indexes])
+
 G = nx.Graph()
 for x in range(edges.shape[0]):
     a = edges.source.values[x]
     b = edges.target.values[x]
     w = edges.cost.values[x]
     g = edges.green_ratio.values[x]
-    if g >=0.8:
+    if g >0.8:
         g = 0.8
     G.add_node(a)
     G.add_node(b)
-    G.add_edge(a,b, {'weight':w, 'green':g})
+    G.add_edge(a,b, {'weight':w, 'green':1-g})
 
-def set_spatial_index(coordinates):
-    p = index.Property()
-    p.dimension = 2
-    ind= index.Index(properties=p)
-    for x,y in zip(coordinates.keys(),coordinates.values()):
-        ind.add(x,y)
-    return ind
 
 spatial = set_spatial_index(coords)
 
