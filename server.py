@@ -48,8 +48,9 @@ for x in range(edges.shape[0]):
     g = edges.green_ratio.values[x]
     G.add_node(a)
     G.add_node(b)
-    G.add_edge(a,b, {'weight':w, 'green':1-g})
+    G.add_edge(a,b, {'weight':w, 'green':g})
 
+G = G.adj
 
 spatial = set_spatial_index(coords)
 

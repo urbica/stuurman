@@ -9,6 +9,16 @@ from shapely.ops import linemerge
 import geopandas as gp
 from itertools import count
 from numpy import log, log10
+def neighs_iter(v, G):
+    for x in G[v].keys():
+        yield x
+def get_w(float w, float g):
+    if g>0.5:
+        return w*0.5
+    if g>0.3:
+        return w*0.3
+    else:
+        return w
 cdef check_similarity(list l,list l2, dict p):
     m = 0
     for l1 in l:
@@ -60,11 +70,10 @@ def bidirectional_dijkstra(G, source_coords, target_coords, spatial_index, datas
     seen =   [{source:0},        {target:0} ]
     push(fringe[0], (0, source))
     push(fringe[1], (0, target))
-    neighs = [G.neighbors_iter, G.neighbors_iter]
-    G = G.adj
+    neighs = [neighs_iter, neighs_iter]
     finalpath = []
     dir = 1
-    get_weight = lambda x: x.get('green',1) + x.get(weight,1)
+    get_weight = lambda x: get_w(x.get(weight,1), x.get('green', 1))
     if shortest:
         get_weight = lambda x: x.get(weight,1)
     while fringe[0] and fringe[1]:
@@ -75,7 +84,7 @@ def bidirectional_dijkstra(G, source_coords, target_coords, spatial_index, datas
         dists[dir][v] = dist 
         if v in dists[1-dir]:
             return get_path(finalpath, dataset)
-        for w in neighs[dir](v):
+        for w in neighs[dir](v,G):
             if len(G[w])==1:
                 if w!=target:
                     continue
