@@ -64,7 +64,7 @@ def bidirectional_dijkstra(G, source_coords, target_coords, spatial_index, datas
     G = G.adj
     finalpath = []
     dir = 1
-    get_weight = lambda x: x.get('green',1 + x.get(weight,1)
+    get_weight = lambda x: x.get('green',1) + x.get(weight,1)
     if shortest:
         get_weight = lambda x: x.get(weight,1)
     while fringe[0] and fringe[1]:
