@@ -46,8 +46,6 @@ for x in range(edges.shape[0]):
     b = edges.target.values[x]
     w = edges.cost.values[x]
     g = edges.green_ratio.values[x]
-    if g >0.8:
-        g = 0.8
     G.add_node(a)
     G.add_node(b)
     G.add_edge(a,b, {'weight':w, 'green':1-g})

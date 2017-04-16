@@ -20,16 +20,27 @@
          id: 'mapbox.streets'
       }).addTo(mymap);
 
+      function getColor(d) {
+      return d > 0.9  ? '#006D2C' :
+            d > 0.8  ? '#31A354' :
+            d > 0.6   ? '#74C476' :
+            d > 0.4   ? '#A1D99B' :
+            d > 0.2   ? '#C7E9C0' :
+                     '#EDF8E9';
+      }
+
+      function style(feature) {
+      return {
+         color: getColor(feature.properties.green_ratio),
+         weight: 5,
+         opacity: 1,
+         };
+      }
 
       const markerStart = L.marker([55.75, 37.67], {draggable:'true'})
                            .addTo(mymap);
       const markerFinish = L.marker([55.77, 37.69], {draggable:'true'})
                            .addTo(mymap);
-      var myStyle = {
-         "color": "#ff7800",
-         "weight": 5,
-         "opacity": 0.65 
-                     };
 
       var url = '/route';
 
@@ -57,6 +68,7 @@
             .then( function(resp) {
                //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
                myLayer.addData(resp);
+               //myLayer.set_style(style);
                });
       //var myLayer = L.geoJSON().addTo(mymap);
       //myLayer.addData(geojsonFeature);
@@ -89,7 +101,8 @@
                   .then( function(resp) {
                      //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
                      myLayer.clearLayers();
-                     myLayer.addData(resp);
+                     //myLayer.addData(resp);
+                     myLayer = L.geoJSON(resp, {style:style}).addTo(mymap)
                      });
                   console.log('startPosition', startPosition);
                }
@@ -123,7 +136,8 @@
                   .then( function(resp) {
                      //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
                      myLayer.clearLayers();
-                     myLayer.addData(resp);
+                     //myLayer.addData(resp);
+                     myLayer = L.geoJSON(resp, {style:style}).addTo(mymap)
                      });
             console.log('finishPosition', finishPosition);
          }

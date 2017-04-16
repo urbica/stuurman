@@ -64,7 +64,7 @@ def bidirectional_dijkstra(G, source_coords, target_coords, spatial_index, datas
     G = G.adj
     finalpath = []
     dir = 1
-    get_weight = lambda x: x.get(weight,1) * x.get('green',1)
+    get_weight = lambda x: x.get('green',1 + x.get(weight,1)
     if shortest:
         get_weight = lambda x: x.get(weight,1)
     while fringe[0] and fringe[1]:
@@ -115,7 +115,7 @@ def beautiful_path(G, source_coords, spatial_index, dataset, weight = 'weight', 
     neighs = G.neighbors_iter
     finalpath = []
     weights = {}
-    get_weight = lambda u, v, x: x.get(weight,1) * x.get('green',1)
+    get_weight = lambda u, v, x: x.get(weight,1) + x.get('green',1)
     get_real_weight = lambda u, v, x: x.get(weight, 1)
     while fringe:
         (d, k, v) = heappop(fringe)
@@ -165,7 +165,7 @@ def walking_street(G, source_coords, spatial_index, dataset, weight = 'weight', 
     neighs = G.neighbors_iter
     finalpath = []
     weights = {}
-    get_weight = lambda u, v, x: x.get(weight,1) * x.get('green',1)
+    get_weight = lambda u, v, x: x.get(weight,1) + x.get('green',1)
     get_real_weight = lambda u, v, x: x.get(weight, 1)
     while fringe:
         (d, k, v) = heappop(fringe)
