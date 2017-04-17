@@ -9,26 +9,28 @@ import geopandas as gp
 from math import pow
 from numpy import arccos, pi
 
-cdef float vector_dist(tuple vector):
-    return pow(pow(vector[0],2)+pow(vector[1],2),0.5)
+def vector_dist(tuple vector):
+    cdef float d
+    d = vector[0]**2+vector[1]**2
+    return d**0.5
 
-cdef int get_circ(tuple vector1,tuple  vector2):
-    cdef float scal,evklid1,evklid2, total_evklid, answer
+def get_circ(tuple vector1, tuple vector2):
+    cdef float scal, evklid1, evklid2, total_evklid, answer
     scal = vector1[0]*vector2[0]+vector1[1]*vector2[1]
     evklid1,evklid2  = [vector_dist(vect) for vect in (vector1, vector2)]
     total_evklid = evklid1*evklid2
     if all((evklid1, evklid2)):
         answer = scal/total_evklid
-        if arccos(answer) > pi*0.4 and evklid1/evklid2 > 0.2:
+        if arccos(answer)>pi*0.4 and evklid1/evklid2>0.1:
             return 1
         else:
             return 0
     else:
         return 1
 
-cdef tuple get_vector(long node1, long  node2, dict  list_of_coords):
+def get_vector(long node1,long node2, dict list_of_coords):
     cdef tuple coords1, coords2
-    cdef float x,y
+    cdef float x, y
     coords1 = list_of_coords[node1]
     coords2 = list_of_coords[node2]
     x = coords1[0]-coords2[0]
@@ -39,16 +41,16 @@ def find_nearest_node(coordinates, index):
     if type(coordinates) == str:
         c = geocoder.yandex(coordinates).latlng
         coordinates = [float(c[x]) for x in [1,0]]
-    nearest = list(index.nearest(coordinates, 1))
+    nearest = tuple(index.nearest(coordinates, 1))
     nearest_node = nearest[0]
     return nearest_node
 
-def get_path(list_of_nodes, dataset):
+def get_path(list_of_nodes,dataset):
     data = dataset[(dataset.source.isin(list_of_nodes))&(dataset.target.isin(list_of_nodes))]
     return data.to_json()
 
-cdef float get_w(float w, float g):
-    if g>=0.5:
+def get_w(float w, float g):
+    if g>0.3:
         return w*0.5
     else:
         return w
@@ -58,8 +60,8 @@ def neighs_iterator(v, G):
         yield x
 
 def bidirectional_dijkstra(G, source_coords, target_coords, 
-                             spatial_index, dataset, tree, weight = 'weight',
-                             shortest=0, avoid = None):
+                            spatial_index, dataset, tree, weight = 'weight',
+                              shortest=0, avoid = None):
     if type(source_coords) != int:
         nod = [find_nearest_node(x, spatial_index) for x in [source_coords, target_coords]]
         source,target = tuple(nod)
@@ -69,15 +71,12 @@ def bidirectional_dijkstra(G, source_coords, target_coords,
     if source == target: return (0, [source])
     vector = get_vector(source, target, tree)
     back_vector = get_vector(target, source, tree)
-    pop = heappop
-    push = heappush
     dists =  [{},                {}]
-    paths =  [{source:[source]}, {target:[target]}] 
-    fringe = [[],                []] 
-    seen =   [{source:0},        {target:0} ]
-    push(fringe[0], (0, source))
-    push(fringe[1], (0, target))
-    neighs = neighs_iterator
+    paths =  [{source:[source]}, {target:[target]}]
+    fringe = [[],                []]
+    seen =   [{source:0},        {target:0}]
+    heappush(fringe[0], (0, source))
+    heappush(fringe[1], (0, target))
     finalpath = []
     dir = 1
     get_weight = lambda x: get_w(x.get(weight,1), x.get('green',1))
@@ -85,13 +84,13 @@ def bidirectional_dijkstra(G, source_coords, target_coords,
         get_weight = lambda x: x.get(weight,1)
     while fringe[0] and fringe[1]:
         dir = 1-dir
-        (dist, v )= pop(fringe[dir])
+        (dist, v)= heappop(fringe[dir])
         if v in dists[dir]:
             continue
         dists[dir][v] = dist 
         if v in dists[1-dir]:
             return get_path(finalpath, dataset)
-        for w in neighs(v,G):
+        for w in neighs_iterator(v,G):
             if len(G[w])==1:
                 if w!=target:
                     continue
@@ -102,7 +101,7 @@ def bidirectional_dijkstra(G, source_coords, target_coords,
                 minweight= get_weight(G[v][w])
                 vwLength = dists[dir][v] + minweight
             else:
-                w_vector = get_vector(target, w,tree)
+                w_vector = get_vector(target, w, tree)
                 if get_circ(w_vector, back_vector):
                     continue
                 minweight= get_weight(G[w][v])
@@ -115,7 +114,7 @@ def bidirectional_dijkstra(G, source_coords, target_coords,
                     raise ValueError("Contradictory paths found: negative weights?")
             elif w not in seen[dir] or vwLength < seen[dir][w]:
                 seen[dir][w] = vwLength
-                push(fringe[dir], (vwLength,w))
+                heappush(fringe[dir], (vwLength,w))
                 paths[dir][w] = paths[dir][v]+[w]
                 if w in seen[0] and w in seen[1]:
                     totaldist = seen[0][w] + seen[1][w]
@@ -124,7 +123,7 @@ def bidirectional_dijkstra(G, source_coords, target_coords,
                         revpath = paths[1][w][:]
                         revpath.reverse()
                         finalpath = paths[0][w] + revpath[1:]
-    raise nx.NetworkXNoPath("No path between %s and %s." % (source, target))
+    raise Exception("No path between %s and %s." % (source, target))
 
 def three_best(d, p, dataset):
     return [get_path(p[v], dataset) for v in d]

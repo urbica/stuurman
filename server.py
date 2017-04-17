@@ -64,6 +64,8 @@ def set_spatial_index(coordinates):
 spatial = set_spatial_index(coords)
 G = G.adj
 
+edges = edges[['cost','green_ratio','source', 'target','geometry']]
+
 app = Flask(__name__)
 
 @app.route('/ping')
