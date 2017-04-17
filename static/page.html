@@ -21,18 +21,26 @@
       }).addTo(mymap);
 
       function getColor(d) {
-      return d > 0.9  ? '#006D2C' :
-            d > 0.8  ? '#31A354' :
-            d > 0.6   ? '#74C476' :
-            d > 0.4   ? '#A1D99B' :
-            d > 0.2   ? '#C7E9C0' :
-                     '#EDF8E9';
+      return d > 0.9  ? '#006837' :
+            d > 0.8  ? '#31a354' :
+            d > 0.6   ? '#78c679' :
+            d > 0.4   ? '#addd8e' :
+            d > 0.2   ? '#d9f0a3' :
+                     '#ffffcc';
       }
 
       function style(feature) {
       return {
          color: getColor(feature.properties.green_ratio),
-         weight: 5,
+         weight: 6,
+         opacity: 1,
+         };
+      }
+
+     function underStyle(feature) {
+      return {
+         color: '#636363',
+         weight: 8,
          opacity: 1,
          };
       }
@@ -53,6 +61,7 @@
       var d = new FormData();
       d.append( "json", JSON.stringify( params ) );
       var myLayer = L.geoJSON().addTo(mymap);
+      var underLayer = L.geoJSON().addTo(mymap);
       fetch(url, {  
          method: 'POST', 
          mode: 'cors',
@@ -68,6 +77,7 @@
             .then( function(resp) {
                //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
                myLayer.addData(resp);
+               underLayer.addData(resp);
                //myLayer.set_style(style);
                });
       //var myLayer = L.geoJSON().addTo(mymap);
@@ -101,7 +111,9 @@
                   .then( function(resp) {
                      //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
                      myLayer.clearLayers();
+                     underLayer.clearLayers();
                      //myLayer.addData(resp);
+                     underLayer = L.geoJSON(resp, {style:underStyle}).addTo(mymap)
                      myLayer = L.geoJSON(resp, {style:style}).addTo(mymap)
                      });
                   console.log('startPosition', startPosition);
@@ -136,9 +148,11 @@
                   .then( function(resp) {
                      //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
                      myLayer.clearLayers();
+                     underLayer.clearLayers();
                      //myLayer.addData(resp);
-                     myLayer = L.geoJSON(resp, {style:style}).addTo(mymap)
-                     });
+	                 underLayer = L.geoJSON(resp, {style:underStyle}).addTo(mymap)
+	                 myLayer = L.geoJSON(resp, {style:style}).addTo(mymap)
+	                });
             console.log('finishPosition', finishPosition);
          }
       );
