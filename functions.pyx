@@ -1,5 +1,4 @@
 from shapely import geometry
-from scipy.spatial import ConvexHull
 from math import pow
 import networkx as nx
 from heapq import heappop, heappush
@@ -7,36 +6,35 @@ from rtree import index
 import geocoder
 from shapely.ops import linemerge
 import geopandas as gp
-from itertools import count
-from numpy import log, log10
-def neighs_iter(v, G):
-    for x in G[v].keys():
-        yield x
-def get_w(float w, float g):
-    if g>0.5:
-        return w*0.5
-    if g>0.3:
-        return w*0.3
+from math import pow
+from numpy import arccos, pi
+
+cdef float vector_dist(tuple vector):
+    return pow(pow(vector[0],2)+pow(vector[1],2),0.5)
+
+cdef int get_circ(tuple vector1,tuple  vector2):
+    cdef float scal,evklid1,evklid2, total_evklid, answer
+    scal = vector1[0]*vector2[0]+vector1[1]*vector2[1]
+    evklid1,evklid2  = [vector_dist(vect) for vect in (vector1, vector2)]
+    total_evklid = evklid1*evklid2
+    if all((evklid1, evklid2)):
+        answer = scal/total_evklid
+        if arccos(answer) > pi*0.4 and evklid1/evklid2 > 0.2:
+            return 1
+        else:
+            return 0
     else:
-        return w
-cdef check_similarity(list l,list l2, dict p):
-    m = 0
-    for l1 in l:
-        i = 0.0
-        for x in p[l1]:
-            if x in l2:
-                i+=1
-        if i/len(l2)<=0.5:
-            m+=1
-    if m == len(l):
-        return True
-def set_spatial_index(coordinates):
-    p = index.Property()
-    p.dimension = 2
-    ind= index.Index(properties=p)
-    for x,y in zip(coordinates.keys(),coordinates.values()):
-        ind.add(x,y)
-    return ind
+        return 1
+
+cdef tuple get_vector(long node1, long  node2, dict  list_of_coords):
+    cdef tuple coords1, coords2
+    cdef float x,y
+    coords1 = list_of_coords[node1]
+    coords2 = list_of_coords[node2]
+    x = coords1[0]-coords2[0]
+    y = coords1[1]-coords2[1]
+    return (x,y)
+
 def find_nearest_node(coordinates, index):
     if type(coordinates) == str:
         c = geocoder.yandex(coordinates).latlng
@@ -44,17 +42,24 @@ def find_nearest_node(coordinates, index):
     nearest = list(index.nearest(coordinates, 1))
     nearest_node = nearest[0]
     return nearest_node
+
 def get_path(list_of_nodes, dataset):
-    #g = gp.GeoDataFrame()
     data = dataset[(dataset.source.isin(list_of_nodes))&(dataset.target.isin(list_of_nodes))]
-    #print data.green_ratio.sum()
-    #print data.cost.sum()
-    #geo = linemerge(data.geometry.values)
-    #g['geometry'] = [geo]
     return data.to_json()
-def three_best(d, p, dataset):
-    return [get_path(p[v], dataset) for v in d]
-def bidirectional_dijkstra(G, source_coords, target_coords, spatial_index, dataset, weight = 'weight',  shortest=False, avoid = None):
+
+cdef float get_w(float w, float g):
+    if g>=0.5:
+        return w*0.5
+    else:
+        return w
+    
+def neighs_iterator(v, G):
+    for x in G[v].keys():
+        yield x
+
+def bidirectional_dijkstra(G, source_coords, target_coords, 
+                             spatial_index, dataset, tree, weight = 'weight',
+                             shortest=0, avoid = None):
     if type(source_coords) != int:
         nod = [find_nearest_node(x, spatial_index) for x in [source_coords, target_coords]]
         source,target = tuple(nod)
@@ -62,6 +67,8 @@ def bidirectional_dijkstra(G, source_coords, target_coords, spatial_index, datas
         source = source_coords
         target = target_coords
     if source == target: return (0, [source])
+    vector = get_vector(source, target, tree)
+    back_vector = get_vector(target, source, tree)
     pop = heappop
     push = heappush
     dists =  [{},                {}]
@@ -70,10 +77,10 @@ def bidirectional_dijkstra(G, source_coords, target_coords, spatial_index, datas
     seen =   [{source:0},        {target:0} ]
     push(fringe[0], (0, source))
     push(fringe[1], (0, target))
-    neighs = [neighs_iter, neighs_iter]
+    neighs = neighs_iterator
     finalpath = []
     dir = 1
-    get_weight = lambda x: get_w(x.get(weight,1), x.get('green', 1))
+    get_weight = lambda x: get_w(x.get(weight,1), x.get('green',1))
     if shortest:
         get_weight = lambda x: x.get(weight,1)
     while fringe[0] and fringe[1]:
@@ -84,14 +91,20 @@ def bidirectional_dijkstra(G, source_coords, target_coords, spatial_index, datas
         dists[dir][v] = dist 
         if v in dists[1-dir]:
             return get_path(finalpath, dataset)
-        for w in neighs[dir](v,G):
+        for w in neighs(v,G):
             if len(G[w])==1:
                 if w!=target:
                     continue
             if(dir==0):
+                w_vector = get_vector(source, w, tree)
+                if get_circ(w_vector, vector):
+                    continue
                 minweight= get_weight(G[v][w])
                 vwLength = dists[dir][v] + minweight
             else:
+                w_vector = get_vector(target, w,tree)
+                if get_circ(w_vector, back_vector):
+                    continue
                 minweight= get_weight(G[w][v])
                 vwLength = dists[dir][v] + minweight 
             if avoid is not None:
@@ -112,6 +125,21 @@ def bidirectional_dijkstra(G, source_coords, target_coords, spatial_index, datas
                         revpath.reverse()
                         finalpath = paths[0][w] + revpath[1:]
     raise nx.NetworkXNoPath("No path between %s and %s." % (source, target))
+
+def three_best(d, p, dataset):
+    return [get_path(p[v], dataset) for v in d]
+
+cdef check_similarity(list l,list l2, dict p):
+    m = 0
+    for l1 in l:
+        i = 0.0
+        for x in p[l1]:
+            if x in l2:
+                i+=1
+        if i/len(l2)<=0.5:
+            m+=1
+    if m == len(l):
+        return True
     
 def beautiful_path(G, source_coords, spatial_index, dataset, weight = 'weight', cutoff = None, pred=None): 
     G_succ = G.succ if G.is_directed() else G.adj

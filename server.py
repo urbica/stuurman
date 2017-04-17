@@ -8,7 +8,7 @@ from rtree import index
 import pyximport
 pyximport.install()
 
-from functions import bidirectional_dijkstra, set_spatial_index
+from functions import bidirectional_dijkstra
 
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -18,11 +18,12 @@ with open(path+'/graphs/nodes_osm.pickle','r') as f:
     nodes = pickle.load(f)
 
 coords={}
+nodes = nodes[(nodes.id.isin(edges.source.values))|(nodes.id.isin(edges.target.values))]
 for x in range(nodes.shape[0]):
     coord = (nodes.geometry.values[x].x,nodes.geometry.values[x].y)
     id = nodes.id.values[x]
     coords[id] = coord
-
+G = nx.Graph()
 
 d = {}
 indexes = []
@@ -40,19 +41,28 @@ for x in range(edges.shape[0]):
 
 edges = edges.drop(edges.index[indexes])
 
-G = nx.Graph()
 for x in range(edges.shape[0]):
     a = edges.source.values[x]
     b = edges.target.values[x]
     w = edges.cost.values[x]
     g = edges.green_ratio.values[x]
+    if g>1:
+        g = 1
+    if g > 0.7:
+        g = 0.7
     G.add_node(a)
     G.add_node(b)
     G.add_edge(a,b, {'weight':w, 'green':g})
-
-G = G.adj
+def set_spatial_index(coordinates):
+    p = index.Property()
+    p.dimension = 2
+    ind= index.Index(properties=p)
+    for x,y in zip(coordinates.keys(),coordinates.values()):
+        ind.add(x,y)
+    return ind
 
 spatial = set_spatial_index(coords)
+G = G.adj
 
 app = Flask(__name__)
 
@@ -70,7 +80,7 @@ def route():
     keys = request.get_json()
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
-    return bidirectional_dijkstra(G, coords1, coords2, spatial, edges)
+    return bidirectional_dijkstra(G, coords1, coords2, spatial, edges, coords)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
