@@ -22,6 +22,11 @@ def distance(long p1, long p2, dict coords):
 def neighs_iter(key, g):
     for x in g[key].items():
         yield x
+def get_w(float w, float g):
+    if g>0.3:
+        return w*0.5
+    else:
+        return w
 def bidirectional_astar(G, source_coords, 
                         target_coords, heuristic,
                         spatial_index, dataset, 
@@ -37,21 +42,15 @@ def bidirectional_astar(G, source_coords,
     while queue[0] and queue[1]:
         d = 1-d
         _, __, v, dist, parent = heappop(queue[d])
+        
         if v in explored[1-d]:
-            #return dl
             path1 = deque([v])
-            #path1 = [v]
             path2 = deque([])
-            #path2 = []
             node1 = parent
             node2 = explored[1-d][v]
             while node1 is not None:
-                #if node1 is not None:
                 path1.appendleft(node1)
                 node1 = explored[d][node1]
-                #if node2 is not None:
-                #    path2.append(node2)
-                #    node2 = explored[1-d][node2]
             while node2 is not None:
                 path2.append(node2)
                 node2 = explored[1-d][node2]
@@ -70,7 +69,7 @@ def bidirectional_astar(G, source_coords,
             #dl[d].append(neighbor)
             if neighbor in explored[d]:
                 continue
-            ncost = dist + w.get(weight, 1)
+            ncost = dist + get_w(w.get(weight, 1), w.get('green', 1))
             if neighbor in enqueued[d]:
                 qcost, h = enqueued[d][neighbor]
                 if qcost <= ncost:
