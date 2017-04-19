@@ -8,7 +8,7 @@ from rtree import index
 import pyximport
 pyximport.install()
 
-from functions import bidirectional_dijkstra
+from functions import bidirectional_astar, distance
 
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -82,7 +82,7 @@ def route():
     keys = request.get_json()
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
-    return bidirectional_dijkstra(G, coords1, coords2, spatial, edges, coords)
+    return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
