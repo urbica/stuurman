@@ -21,17 +21,14 @@
       }).addTo(mymap);
 
       function getColor(d) {
-      return d > 0.9  ? '#006837' :
-            d > 0.8  ? '#31a354' :
-            d > 0.6   ? '#78c679' :
-            d > 0.4   ? '#addd8e' :
-            d > 0.2   ? '#d9f0a3' :
-                     '#ffffcc';
+      return d == 3  ? '#006837' :
+            d == 2   ? '#78c679' :
+            d == 1   ? '#addd8e' :
       }
 
       function style(feature) {
       return {
-         color: getColor(feature.properties.green_ratio),
+         color: getColor(feature.properties.color_type),
          weight: 6,
          opacity: 1,
          };

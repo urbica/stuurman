@@ -64,7 +64,8 @@ def set_spatial_index(coordinates):
 spatial = set_spatial_index(coords)
 G = G.adj
 
-edges = edges[['cost','green_ratio','source', 'target','geometry']]
+edges['color_type'] = edges.green_ratio.apply(categorialize)
+edges = edges[['source', 'target', 'color_type','geometry']]
 
 app = Flask(__name__)
 
