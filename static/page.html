@@ -21,9 +21,17 @@
       }).addTo(mymap);
 
       function getColor(d) {
-      return d == 3  ? '#006837' :
-            d == 2   ? '#78c679' :
-            d == 1   ? '#addd8e' ;
+      switch(d) {
+         case 3:
+            return '#006837';
+            break;
+         case 2:
+            return '#78c679';
+            break;
+         case 1:
+            return '#addd8e';
+            break;
+      }
       }
 
       function style(feature) {
