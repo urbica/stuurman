@@ -60,6 +60,13 @@ def set_spatial_index(coordinates):
     for x,y in zip(coordinates.keys(),coordinates.values()):
         ind.add(x,y)
     return ind
+def categorialize(x):
+    if x > 0.8:
+        return 3
+    if x > 0.4:
+        return 2
+    else:
+        return 1
 
 spatial = set_spatial_index(coords)
 G = G.adj
