@@ -80,6 +80,12 @@ app = Flask(__name__)
 def ping():
     return 'Pong'
 
+@app.route('/geocode')
+def translate():
+    keys = request.get_json()
+    text = keys['address']
+    return geocode(text)
+
 @app.route('/')
 def index():
     page = urllib.urlopen(path+'/static/page.html').read()

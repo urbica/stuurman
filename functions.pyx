@@ -4,10 +4,11 @@ from numpy import arccos, pi
 import geopandas as gp
 from itertools import count
 from collections import deque
+def geocode(text):
+    c = geocoder.osm(text).latlng
+    coordinates = {'lat':float(c[1]),'lng':float(c[0])}
+    return json.dumps(coordinates)
 def find_nearest_node(coordinates, index):
-    if type(coordinates) == str:
-        c = geocoder.yandex(coordinates).latlng
-        coordinates = [float(c[x]) for x in [1,0]]
     nearest = tuple(index.nearest(coordinates, 1))
     nearest_node = nearest[0]
     return nearest_node
