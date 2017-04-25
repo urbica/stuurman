@@ -82,9 +82,10 @@ def ping():
 
 @app.route('/geocode', methods=['POST'])
 def translate():
-    keys = request.get_json()
-    text = keys['address']
-    return geocode(text)
+    tx = request.get_json()
+    tx = tx['address']
+    print tx
+    return geocode(tx)
 
 @app.route('/')
 def index():
