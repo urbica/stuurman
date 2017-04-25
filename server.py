@@ -8,7 +8,7 @@ from rtree import index
 import pyximport
 pyximport.install()
 
-from functions import bidirectional_astar, distance
+from functions import bidirectional_astar, distance, geocode
 
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -80,7 +80,7 @@ app = Flask(__name__)
 def ping():
     return 'Pong'
 
-@app.route('/geocode')
+@app.route('/geocode', methods=['POST'])
 def translate():
     keys = request.get_json()
     text = keys['address']
