@@ -4,6 +4,7 @@ from numpy import arccos, pi
 import geopandas as gp
 from itertools import count
 from collections import deque
+import json
 def geocode(text):
     c = geocoder.osm(text).latlng
     coordinates = {'lat':float(c[1]),'lng':float(c[0])}
