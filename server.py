@@ -61,9 +61,9 @@ def set_spatial_index(coordinates):
         ind.add(x,y)
     return ind
 def categorialize(x):
-    if x > 0.8:
+    if x > 0.7:
         return 3
-    if x > 0.4:
+    if x > 0.3:
         return 2
     else:
         return 1
