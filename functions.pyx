@@ -73,7 +73,7 @@ def bidirectional_astar(G, source_coords,
                 path2.append(node2)
                 node2 = explored[1-d][node2]
             finalpath = list(path1)+list(path2)
-            return get_path(finalpath, dataset)
+            return get_path(finalpath, dataset, additional_param)
         
         if v in explored[d]:
             continue
@@ -101,5 +101,11 @@ def composite_request(G, source_coords, target_coords, heuristic, spatial_index,
                                        heuristic, spatial_index, dataset, coords, additional_param = 'poi')
     mixed_route = bidirectional_astar(G, source_coords, target_coords, 
                                        heuristic, spatial_index, dataset, coords, additional_param = 'mixed')
-    answer = '[{"id":1,"type":"green","geom":%s},{"id":2,"type":"poi","geom":%s},{"id":3,"type":"composite","geom":%s}]'%(green_route,poi_route,mixed_route)
+    shortest_route = bidirectional_astar(G, source_coords, target_coords, 
+                                       heuristic, spatial_index, dataset, coords)
+    answer = """[{"id":1,"type":"green","geom":%s},
+    {"id":2,"type":"poi","geom":%s},
+    {"id":3,"type":"aggregate","geom":%s},
+    {"id":4,"type":"shortest","geom":%s}
+    ]"""%(green_route,poi_route,mixed_route,shortest_route)
     return answer
