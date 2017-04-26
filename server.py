@@ -8,7 +8,7 @@ from support import transform_poi, transform_green, categorialize, categorialize
 import pyximport
 pyximport.install()
 
-from functions import bidirectional_astar, distance, geocode
+from functions import bidirectional_astar, distance, geocode, composite_request
 
 path = os.path.dirname(os.path.realpath(__file__))
 
