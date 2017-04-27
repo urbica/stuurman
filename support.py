@@ -27,7 +27,7 @@ def categorialize(x):
 def categorialize_noise(x):
     if x ==1:
         return 3
-    if x ==0.7:
+    if x ==0.6:
         return 2
     else:
         return 1
