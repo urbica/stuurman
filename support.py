@@ -4,9 +4,9 @@ def transform_noise(x):
     if x >60:
         return 1
     if x >50:
-        return 0.7
+        return 0.6
     else:
-        return 0.4
+        return 0.3
 
 def transform_green(x):
     if x > 0.7:
