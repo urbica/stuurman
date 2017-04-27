@@ -1,21 +1,21 @@
 from rtree import index
 
-def transform_poi(x):
-    if x == 3:
+def transform_noise(x):
+    if x >60:
         return 1
-    if x == 2:
-        return 0.5
-    if x == 1:
+    if x >50:
         return 0.7
-    if x == 0:
-        return 0.5
+    else:
+        return 0.4
 
 def transform_green(x):
-    if x >0.3:
+    if x > 0.7:
+        return 0.3
+    if x > 0.3:
         return 0.5
     else:
         return 1
-    
+
 def categorialize(x):
     if x > 0.7:
         return 3
@@ -24,13 +24,14 @@ def categorialize(x):
     else:
         return 1
     
-def categorialize_poi(x):
-    if x > 0.5:
+def categorialize_noise(x):
+    if x ==1:
         return 3
-    if x > 0.3:
+    if x ==0.7:
         return 2
     else:
         return 1
+    
 def set_spatial_index(coordinates):
     p = index.Property()
     p.dimension = 2

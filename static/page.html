@@ -34,9 +34,31 @@
       }
       }
 
+      function getNoiseColor(d) {
+      switch(d) {
+         case 3:
+            return '#3182bd';
+            break;
+         case 2:
+            return '#9ecae1';
+            break;
+         case 1:
+            return '#deebf7';
+            break;
+      }
+      }
+
       function style(feature) {
       return {
-         color: getColor(feature.properties.color_type),
+         color: getColor(feature.properties.color),
+         weight: 6,
+         opacity: 1,
+         };
+      }
+
+      function noiseStyle(feature) {
+      return {
+         color: getNoiseColor(feature.properties.color),
          weight: 6,
          opacity: 1,
          };
@@ -55,7 +77,8 @@
       const markerFinish = L.marker([55.77, 37.69], {draggable:'true'})
                            .addTo(mymap);
 
-      var url = '/route';
+      var url = '/green';
+      var url1 = '/noise'
 
       var params = {
             x1: 37.69,
@@ -64,9 +87,13 @@
             y2: 55.77
                };
       var d = new FormData();
+
       d.append( "json", JSON.stringify( params ) );
       var myLayer = L.geoJSON().addTo(mymap);
       var underLayer = L.geoJSON().addTo(mymap);
+      var noiseLayer = L.geoJSON().addTo(mymap);
+      var underNoiseLayer = L.geoJSON().addTo(mymap);
+
       fetch(url, {  
          method: 'POST', 
          mode: 'cors',
@@ -83,6 +110,24 @@
                //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
                myLayer.addData(resp);
                underLayer.addData(resp);
+               //myLayer.set_style(style);
+               });
+      fetch(url1, {  
+         method: 'POST', 
+         mode: 'cors',
+         headers: {
+         'Access-Control-Allow-Origin':'*',
+         'Content-Type': 'application/json',
+         Accept: 'application/json',
+         },
+         body: JSON.stringify(params)
+            })
+            .then (function(response) {return response.json();
+               })
+            .then( function(resp) {
+               //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
+               noiseLayer.addData(resp);
+               underNoiseLayer.addData(resp);
                //myLayer.set_style(style);
                });
       //var myLayer = L.geoJSON().addTo(mymap);
@@ -121,6 +166,26 @@
                      underLayer = L.geoJSON(resp, {style:underStyle}).addTo(mymap)
                      myLayer = L.geoJSON(resp, {style:style}).addTo(mymap)
                      });
+            fetch(url1, {  
+               method: 'POST', 
+               mode: 'cors',
+               headers: {
+               'Access-Control-Allow-Origin':'*',
+               'Content-Type': 'application/json',
+               Accept: 'application/json',
+               },
+               body: JSON.stringify(params)
+                  })
+                  .then (function(response) {return response.json();
+                     })
+                  .then( function(resp) {
+                     //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
+                     noiseLayer.clearLayers();
+                     underNoiseLayer.clearLayers();
+                     //myLayer.addData(resp);
+                     noiseLayer = L.geoJSON(resp, {style:underStyle}).addTo(mymap)
+                     underNoiseLayer = L.geoJSON(resp, {style:noiseStyle}).addTo(mymap)
+                     });
                   console.log('startPosition', startPosition);
                }
       );
@@ -158,6 +223,26 @@
 	                 underLayer = L.geoJSON(resp, {style:underStyle}).addTo(mymap)
 	                 myLayer = L.geoJSON(resp, {style:style}).addTo(mymap)
 	                });
+            fetch(url1, {  
+               method: 'POST', 
+               mode: 'cors',
+               headers: {
+               'Access-Control-Allow-Origin':'*',
+               'Content-Type': 'application/json',
+               Accept: 'application/json',
+               },
+               body: JSON.stringify(params)
+                  })
+                  .then (function(response) {return response.json();
+                     })
+                  .then( function(resp) {
+                     //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
+                     noiseLayer.clearLayers();
+                     underNoiseLayer.clearLayers();
+                     //myLayer.addData(resp);
+                     noiseLayer = L.geoJSON(resp, {style:underStyle}).addTo(mymap)
+                     underNoiseLayer = L.geoJSON(resp, {style:noiseStyle}).addTo(mymap)
+                     });
             console.log('finishPosition', finishPosition);
          }
       );
