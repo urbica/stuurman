@@ -24,7 +24,7 @@ def distance(long p1, long p2, dict coords):
     cdef float x1,x2,y1,y2
     x1,y1 = coords[p1]
     x2,y2 = coords[p2]
-    return (((x2-x1)**2+(y2-y1)**2)**0.5)*15
+    return (((x2-x1)**2+(y2-y1)**2)**0.5)*10
 
 def neighs_iter(key, g):
     for x in g[key].items():
