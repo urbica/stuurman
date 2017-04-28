@@ -31,13 +31,13 @@
       function getColor(d) {
         switch (d) {
           case 3:
-            return '#31a354';
+            return '#73AC61';
             break;
           case 2:
-            return '#addd8e';
+            return '#A6C760';
             break;
           case 1:
-            return '#f7fcb9';
+            return '#E2E062';
             break;
         }
       }
@@ -171,7 +171,7 @@
               myLayer.clearLayers();
               underLayer.clearLayers();
               //myLayer.addData(resp);
-              underLayer = L.geoJSON(resp, { style: underStyle('#21CC2C') }).addTo(mymap)
+              underLayer = L.geoJSON(resp, { style: underStyle('#498F60') }).addTo(mymap)
               myLayer = L.geoJSON(resp, { style: style }).addTo(mymap)
             });
           fetch(noiseUrl, {
@@ -230,7 +230,7 @@
               myLayer.clearLayers();
               underLayer.clearLayers();
               //myLayer.addData(resp);
-              underLayer = L.geoJSON(resp, { style: underStyle }).addTo(mymap)
+              underLayer = L.geoJSON(resp, { style: underStyle('#498F60') }).addTo(mymap)
               myLayer = L.geoJSON(resp, { style: style }).addTo(mymap)
             });
           fetch(noiseUrl, {
@@ -251,7 +251,7 @@
               noiseLayer.clearLayers();
               underNoiseLayer.clearLayers();
               //myLayer.addData(resp);
-              noiseLayer = L.geoJSON(resp, { style: underStyle }).addTo(mymap)
+              noiseLayer = L.geoJSON(resp, { style: underStyle('#CD5031') }).addTo(mymap)
               underNoiseLayer = L.geoJSON(resp, { style: noiseStyle }).addTo(mymap)
             });
           console.log('finishPosition', finishPosition);
