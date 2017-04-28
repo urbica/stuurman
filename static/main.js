@@ -22,13 +22,13 @@ function getColor(d) {
 function getNoiseColor(d) {
   switch (d) {
     case 3:
-      return '#D7FFD0';
+      return '#EB944D';
       break;
     case 2:
-      return '#96FFDC';
+      return '#F5C063';
       break;
     case 1:
-      return '#00FFD9';
+      return '#FADA70';
       break;
   }
 }
@@ -37,7 +37,7 @@ function style(feature) {
   return {
     color: getColor(feature.properties.color),
     weight: 6,
-    opacity: 1,
+    opacity: 1
   };
 }
 
@@ -45,7 +45,7 @@ function noiseStyle(feature) {
   return {
     color: getNoiseColor(feature.properties.color),
     weight: 6,
-    opacity: 1,
+    opacity: 1
   };
 }
 
@@ -53,7 +53,7 @@ function underStyle() {
   return {
     color: '#636363',
     weight: 8,
-    opacity: 1,
+    opacity: 1
   };
 }
 
@@ -63,7 +63,7 @@ const markerFinish = L.marker([55.77, 37.69], { draggable: 'true' })
   .addTo(mymap);
 
 var url = '/green';
-var url1 = '/noise'
+var url1 = '/noise';
 
 var params = {
   x1: 37.69,
@@ -85,7 +85,7 @@ fetch(url, {
   headers: {
     'Access-Control-Allow-Origin': '*',
     'Content-Type': 'application/json',
-    Accept: 'application/json',
+    Accept: 'application/json'
   },
   body: JSON.stringify(params)
 })
@@ -104,7 +104,7 @@ fetch(url1, {
   headers: {
     'Access-Control-Allow-Origin': '*',
     'Content-Type': 'application/json',
-    Accept: 'application/json',
+    Accept: 'application/json'
   },
   body: JSON.stringify(params)
 })
@@ -139,7 +139,7 @@ markerStart.on('dragend',
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
-        Accept: 'application/json',
+        Accept: 'application/json'
       },
       body: JSON.stringify(params)
     })
@@ -160,7 +160,7 @@ markerStart.on('dragend',
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
-        Accept: 'application/json',
+        Accept: 'application/json'
       },
       body: JSON.stringify(params)
     })
@@ -198,7 +198,7 @@ markerFinish.on('dragend',
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json',
-        Accept: 'application/json',
+        Accept: 'application/json'
       },
       body: JSON.stringify(params)
     })
