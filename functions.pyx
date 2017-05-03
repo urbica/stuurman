@@ -49,9 +49,13 @@ def bidirectional_astar(G, source_coords,
         _, v, dist, parent, edge = heappop(queue[d])
         
         if v in explored[1-d]:
-            w = G[explored[1-d][v]][v]
-            path1 = deque([edge])
-            path2 = deque([w.get('id',1)])
+            if v is not None:
+                path1 = deque([edge])
+                w = G[explored[1-d][v]][v]
+                path2 = deque([w.get('id',1)])
+            else:
+                path1 = deque([edge])
+                path2 = deque([])
             node1 = parent
             node2 = explored[1-d][v]
             
