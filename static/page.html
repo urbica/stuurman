@@ -23,7 +23,7 @@
     <script>
       var mymap = L.map('mapid').setView([55.75, 37.65], 13);
 
-      L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+      L.tileLayer('https://api.mapbox.com/styles/v1/walkmap/cizpnte4900gh2rplobw8pgu0/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1Ijoid2Fsa21hcCIsImEiOiJjaXI0d285eXIwMDR1aHRtOWQ3YWE3d2JtIn0.pqyo1f-gocUK9i819vmQBQ', {
         maxZoom: 18,
         id: 'mapbox.streets'
       }).addTo(mymap);
@@ -45,16 +45,31 @@
       function getNoiseColor(d) {
         switch (d) {
           case 3:
-            return '#EB944D';
+            return '#FADA70';
             break;
           case 2:
             return '#F5C063';
             break;
           case 1:
-            return '#FADA70';
+            return '#EB944D';
             break;
         }
       }
+
+      function getAirColor(d) {
+        switch (d) {
+          case 3:
+            return '#3182bd';
+            break;
+          case 2:
+            return '#9ecae1';
+            break;
+          case 1:
+            return '#deebf7';
+            break;
+        }
+      }
+
 
       function style(feature) {
         return {
@@ -64,6 +79,13 @@
       }
 
       function noiseStyle(feature) {
+        return {
+          color: getNoiseColor(feature.properties.color),
+          weight: 6
+        };
+      }
+
+      function airStyle(feature) {
         return {
           color: getNoiseColor(feature.properties.color),
           weight: 6
@@ -84,6 +106,7 @@
 
       var greenUrl = '/green';
       var noiseUrl = '/noise';
+      var airUrl = '/air';
 
       var params = {
         x1: 37.69,
@@ -97,7 +120,9 @@
       var myLayer = L.geoJSON().addTo(mymap);
       var underLayer = L.geoJSON().addTo(mymap);
       var noiseLayer = L.geoJSON().addTo(mymap);
+      var airLayer = L.geoJSON().addTo(mymap);
       var underNoiseLayer = L.geoJSON().addTo(mymap);
+      var underAirLayer = L.geoJSON().addTo(mymap);
 
       fetch(greenUrl, {
         method: 'POST',
@@ -113,11 +138,10 @@
           return response.json();
         })
         .then(function (resp) {
-          //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
           myLayer.addData(resp);
           underLayer.addData(resp);
-          //myLayer.set_style(style);
         });
+
       fetch(noiseUrl, {
         method: 'POST',
         mode: 'cors',
@@ -132,13 +156,27 @@
           return response.json();
         })
         .then(function (resp) {
-          //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
           noiseLayer.addData(resp);
           underNoiseLayer.addData(resp);
-          //myLayer.set_style(style);
         });
-      //var myLayer = L.geoJSON().addTo(mymap);
-      //myLayer.addData(geojsonFeature);
+
+      fetch(airUrl, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify(params)
+      })
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (resp) {
+          noiseLayer.addData(resp);
+          underNoiseLayer.addData(resp);
+        });
 
       markerStart.on('dragend',
         function (event) {
@@ -195,7 +233,27 @@
               noiseLayer = L.geoJSON(resp, { style: underStyle('#CD5031') }).addTo(mymap)
               underNoiseLayer = L.geoJSON(resp, { style: noiseStyle }).addTo(mymap)
             });
-          console.log('startPosition', startPosition);
+          fetch(airUrl, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Content-Type': 'application/json',
+              Accept: 'application/json'
+            },
+            body: JSON.stringify(params)
+          })
+            .then(function (response) {
+              return response.json();
+            })
+            .then(function (resp) {
+              //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
+              airLayer.clearLayers();
+              underAirLayer.clearLayers();
+              //myLayer.addData(resp);
+              airLayer = L.geoJSON(resp, { style: underStyle('#CD5031') }).addTo(mymap)
+              underAirLayer = L.geoJSON(resp, { style: airStyle }).addTo(mymap)
+            });
         }
       );
 
@@ -254,7 +312,27 @@
               noiseLayer = L.geoJSON(resp, { style: underStyle('#CD5031') }).addTo(mymap)
               underNoiseLayer = L.geoJSON(resp, { style: noiseStyle }).addTo(mymap)
             });
-          console.log('finishPosition', finishPosition);
+            fetch(airUrl, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Content-Type': 'application/json',
+              Accept: 'application/json'
+            },
+            body: JSON.stringify(params)
+          })
+            .then(function (response) {
+              return response.json();
+            })
+            .then(function (resp) {
+              //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
+              airLayer.clearLayers();
+              underAirLayer.clearLayers();
+              //myLayer.addData(resp);
+              airLayer = L.geoJSON(resp, { style: underStyle('#CD5031') }).addTo(mymap)
+              underAirLayer = L.geoJSON(resp, { style: airStyle }).addTo(mymap)
+            });
         }
       );
     </script>

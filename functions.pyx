@@ -37,15 +37,16 @@ def bidirectional_astar(G, source_coords,
     
     nod = tuple([find_nearest_node(x, spatial_index) for x in [source_coords, target_coords]])
     source,target = nod
-    queue = [[(0, source, 0, None)], [(0, target, 0, None)]]
+    queue = [[(0, source, 0, None, None)], [(0, target, 0, None, None)]]
     enqueued = [{},{}]
     explored = [{}, {}]
+    edge_parent = [{}, {}]
     heu = [target,source]
     d=1
     
     while queue[0] and queue[1]:
         d = 1-d
-        _, v, dist, parent = heappop(queue[d])
+        _, v, dist, parent, edge = heappop(queue[d])
         
         if v in explored[1-d]:
             path1 = deque([v])
@@ -54,11 +55,11 @@ def bidirectional_astar(G, source_coords,
             node2 = explored[1-d][v]
             
             while node1 is not None:
-                path1.appendleft(node1)
+                path1.appendleft(edge_parent[d][node1])
                 node1 = explored[d][node1]
                 
             while node2 is not None:
-                path2.append(node2)
+                path2.append(edge_parent[1-d][node2])
                 node2 = explored[1-d][node2]
                 
             finalpath = list(path1)+list(path2)
@@ -68,6 +69,7 @@ def bidirectional_astar(G, source_coords,
             continue
         
         explored[d][v] = parent
+        edge_parent[d][v] = edge
         
         for neighbor, w in neighs_iter(v, G):
             if len(G[neighbor])==1:
@@ -83,17 +85,22 @@ def bidirectional_astar(G, source_coords,
                 h = heuristic(neighbor, heu[d], coords)
             
             enqueued[d][neighbor] = ncost, h
-            heappush(queue[d], (ncost+h, neighbor, ncost, v))
+            e = w.get('id',1)
+            heappush(queue[d], (ncost+h, neighbor, ncost, v, e))
 
+            
 def composite_request(G, source_coords, target_coords, heuristic, spatial_index, dataset, coords):
     green_route =  bidirectional_astar(G, source_coords, target_coords, 
                                        heuristic, spatial_index, dataset, coords, 'green')
     noisy_route = bidirectional_astar(G, source_coords, target_coords, 
                                        heuristic, spatial_index, dataset, coords, 'noise')
+    air_route = bidirectional_astar(G, source_coords, target_coords, 
+                                       heuristic, spatial_index, dataset, coords, 'air')
     shortest_route = bidirectional_astar(G, source_coords, target_coords, 
                                        heuristic, spatial_index, dataset, coords)
     answer = """[{"id":1,"type":"green","geom":%s},
     {"id":2,"type":"noise","geom":%s},
+    {"id":2,"type":"air","geom":%s},
     {"id":3,"type":"shortest","geom":%s}
-    ]"""%(green_route,noisy_route,shortest_route)
+    ]"""%(green_route,noisy_route,air_route,shortest_route)
     return answer

@@ -1,36 +1,18 @@
 from rtree import index
+from numpy import percentile
 
-def transform_noise(x):
-    if x >60:
-        return 1
-    if x >50:
-        return 0.6
-    else:
-        return 0.3
-
-def transform_green(x):
-    if x > 0.7:
-        return 0.3
-    if x > 0.3:
-        return 0.5
-    else:
-        return 1
-
-def categorialize(x):
-    if x > 0.7:
-        return 3
-    if x > 0.3:
-        return 2
-    else:
-        return 1
-    
-def categorialize_noise(x):
-    if x ==1:
-        return 3
-    if x ==0.6:
-        return 2
-    else:
-        return 1
+def colorize(column):
+    data = []
+    p33 = percentile(column.values, 33)
+    p66 = percentile(column.values, 66)
+    for x in column.values:
+        if x > p66:
+            data.append(3)
+        if x > p33:
+            data.append(2)
+        else:
+            data.append(1)
+    return data
     
 def set_spatial_index(coordinates):
     p = index.Property()
