@@ -6,11 +6,11 @@ def colorize(column):
     p33 = percentile(column.values, 33)
     p66 = percentile(column.values, 66)
     for x in column.values:
-        if x > p33:
-            data.append(2)
-            continue
-        elif x > p66:
+        if x > p66:
             data.append(3)
+            continue
+        elif x > p33:
+            data.append(2)
             continue
         else:
             data.append(1)
