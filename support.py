@@ -8,8 +8,10 @@ def colorize(column):
     for x in column.values:
         if x > p33:
             data.append(2)
+            continue
         elif x > p66:
             data.append(3)
+            continue
         else:
             data.append(1)
     return data

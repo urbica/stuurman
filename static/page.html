@@ -74,28 +74,28 @@
       function style(feature) {
         return {
           color: getColor(feature.properties.color),
-          weight: 6
+          weight: 4
         };
       }
 
       function noiseStyle(feature) {
         return {
           color: getNoiseColor(feature.properties.color),
-          weight: 6
+          weight: 4
         };
       }
 
       function airStyle(feature) {
         return {
-          color: getNoiseColor(feature.properties.color),
-          weight: 6
+          color: getAirColor(feature.properties.color),
+          weight: 4
         };
       }
 
       function underStyle(hex) {
         return {
           color: hex,
-          weight: 8
+          weight: 5
         };
       }
 
@@ -205,10 +205,8 @@
               return response.json();
             })
             .then(function (resp) {
-              //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
               myLayer.clearLayers();
               underLayer.clearLayers();
-              //myLayer.addData(resp);
               underLayer = L.geoJSON(resp, { style: underStyle('#498F60') }).addTo(mymap)
               myLayer = L.geoJSON(resp, { style: style }).addTo(mymap)
             });
@@ -226,10 +224,8 @@
               return response.json();
             })
             .then(function (resp) {
-              //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
               noiseLayer.clearLayers();
               underNoiseLayer.clearLayers();
-              //myLayer.addData(resp);
               noiseLayer = L.geoJSON(resp, { style: underStyle('#CD5031') }).addTo(mymap)
               underNoiseLayer = L.geoJSON(resp, { style: noiseStyle }).addTo(mymap)
             });
@@ -247,10 +243,8 @@
               return response.json();
             })
             .then(function (resp) {
-              //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
               airLayer.clearLayers();
               underAirLayer.clearLayers();
-              //myLayer.addData(resp);
               airLayer = L.geoJSON(resp, { style: underStyle('#CD5031') }).addTo(mymap)
               underAirLayer = L.geoJSON(resp, { style: airStyle }).addTo(mymap)
             });
@@ -305,10 +299,8 @@
               return response.json();
             })
             .then(function (resp) {
-              //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
               noiseLayer.clearLayers();
               underNoiseLayer.clearLayers();
-              //myLayer.addData(resp);
               noiseLayer = L.geoJSON(resp, { style: underStyle('#CD5031') }).addTo(mymap)
               underNoiseLayer = L.geoJSON(resp, { style: noiseStyle }).addTo(mymap)
             });
@@ -326,10 +318,8 @@
               return response.json();
             })
             .then(function (resp) {
-              //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
               airLayer.clearLayers();
               underAirLayer.clearLayers();
-              //myLayer.addData(resp);
               airLayer = L.geoJSON(resp, { style: underStyle('#CD5031') }).addTo(mymap)
               underAirLayer = L.geoJSON(resp, { style: airStyle }).addTo(mymap)
             });
