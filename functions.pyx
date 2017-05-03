@@ -10,14 +10,14 @@ def find_nearest_node(coordinates, index):
     nearest_node = nearest[0]
     return nearest_node
 
-def get_path(list_of_nodes, dataset, param):
+def get_path(list_of_edges, dataset, param):
     if param != 'weight':
-        data = dataset[(dataset.source.isin(list_of_nodes))&(dataset.target.isin(list_of_nodes))]
+        data = dataset[dataset.id.isin(list_of_edges)]
         data = data.rename(columns={'color_%s'%param:'color'})
         data = data[['geometry','color']]
         return data.to_json()
     else:
-        data = dataset[(dataset.source.isin(list_of_nodes))&(dataset.target.isin(list_of_nodes))]
+        data = dataset[dataset.id.isin(list_of_edges)]
         return data.to_json()
 
 def distance(long p1, long p2, dict coords):
