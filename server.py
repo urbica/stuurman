@@ -8,10 +8,7 @@ from support import colorize, set_spatial_index, transform
 import pyximport
 
 pyximport.install()
-from functions import bidirectional_astar, distance, composite_request
-
-pyximport.install()
-from get_back_func import beautiful_path, beautiful_composite_request
+from functions import bidirectional_astar, distance, composite_request, beautiful_path, beautiful_composite_request
 
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -21,7 +18,6 @@ with open(path+'/graphs/nodes_osm.pickle','r') as f:
     nodes = pickle.load(f)
 
 coords={}
-nodes = nodes[(nodes.id.isin(edges.source.values))|(nodes.id.isin(edges.target.values))]
 for x in range(nodes.shape[0]):
     coord = (nodes.geometry.values[x].x,nodes.geometry.values[x].y)
     id = nodes.id.values[x]
@@ -114,6 +110,7 @@ def beautiful_path_air_route():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
     time = transform(keys['time'])
+    print time
     return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'air')
 
 @app.route('/beautiful_path', methods=['POST'])
