@@ -19,12 +19,28 @@ def get_path(list_of_edges, dataset, param):
     else:
         data = dataset[dataset.id.isin(list_of_edges)]
         return data.to_json()
+    
+def get_response(list_of_edges, dataset, param):
+    if param != 'weight':
+        data = dataset[dataset['id'].isin(list_of_edges)]
+        data = data.rename(columns={'color_%s'%param:'color'})
+        length = dataset['len'].values.sum() 
+        time = dataset['time'].values.sum()
+        data = data[['geometry','color']]
+        answer = """{"length":%f,"time":%i,"type":"%s","geom":%s}"""%(length, time, param, data.to_json())
+        return answer
+    else:
+        data = dataset[dataset['id'].isin(list_of_edges)]
+        length = dataset['len'].values.sum() 
+        time = dataset['time'].values.sum()
+        answer = """{"length":%f,"time":%i,"type":"%s","geom":%s}"""%(length, time, param, data.to_json())
+        return answer
 
 def distance(long p1, long p2, dict coords):
     cdef float x1,x2,y1,y2
     x1,y1 = coords[p1]
     x2,y2 = coords[p2]
-    return (((x2-x1)**2+(y2-y1)**2)**0.5)*15
+    return (((x2-x1)**2+(y2-y1)**2)**0.5)*10
 
 def neighs_iter(key, g):
     for x in g[key].items():
@@ -68,7 +84,7 @@ def bidirectional_astar(G, source_coords,
                 node2 = explored[1-d][node2]
                 
             finalpath = list(path1)+list(path2)
-            return get_path(finalpath, dataset, additional_param)
+            return get_response(finalpath, dataset, additional_param)
         
         if v in explored[d]:
             continue
@@ -96,16 +112,10 @@ def bidirectional_astar(G, source_coords,
             
 def composite_request(G, source_coords, target_coords, heuristic, spatial_index, dataset, coords):
     green_route =  bidirectional_astar(G, source_coords, target_coords, 
-                                       heuristic, spatial_index, dataset, coords, 'green')
+                                       heuristic, spatial_index, dataset, coords, additional_param = 'green')
     noisy_route = bidirectional_astar(G, source_coords, target_coords, 
-                                       heuristic, spatial_index, dataset, coords, 'noise')
+                                       heuristic, spatial_index, dataset, coords, additional_param = 'noise')
     air_route = bidirectional_astar(G, source_coords, target_coords, 
-                                       heuristic, spatial_index, dataset, coords, 'air')
-    shortest_route = bidirectional_astar(G, source_coords, target_coords, 
-                                       heuristic, spatial_index, dataset, coords)
-    answer = """[{"id":1,"type":"green","geom":%s},
-    {"id":2,"type":"noise","geom":%s},
-    {"id":2,"type":"air","geom":%s},
-    {"id":3,"type":"shortest","geom":%s}
-    ]"""%(green_route,noisy_route,air_route,shortest_route)
+                                       heuristic, spatial_index, dataset, coords, additional_param = 'air')
+    answer = """[%s, %s, %s]"""%(green_route,noisy_route,air_route)
     return answer

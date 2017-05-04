@@ -4,11 +4,12 @@ import pickle
 
 from flask import Flask, request
 import networkx as nx
-from support import colorize, set_spatial_index
+from support import colorize, set_spatial_index, transform
 import pyximport
 pyximport.install()
 
 from functions import bidirectional_astar, distance, composite_request
+from get_back_func import beautiful_path, beautiful_composite_request
 
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -43,7 +44,7 @@ for x in range(edges.shape[0]):
     G.add_edge(a,b, {'weight':w, 'green':w*g, 'noise':w*n, 'air':w*air, 'id':edge_id})
 
 spatial = set_spatial_index(coords)
-edges = edges[['id','color_green','color_noise','color_air','geometry']]
+edges = edges[['id','color_green','color_noise','color_air','geometry', 'len', 'time']]
 G = G.adj
 
 app = Flask(__name__)
@@ -91,6 +92,34 @@ def air_route():
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
     return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords, additional_param = 'air')
+
+@app.route('/beautiful_path/green', methods=['POST'])
+def beautiful_path_green_route():
+    keys = request.get_json()
+    coords = [keys['x'], keys['y']]
+    time = transform(keys['time'])
+    return beautiful_path(G, coords1, distance, spatial, edges, coords, time, additional_param = 'green')
+
+@app.route('/beautiful_path/noise', methods=['POST'])
+def beautiful_path_noise_route():
+    keys = request.get_json()
+    coords = [keys['x'], keys['y']]
+    time = transform(keys['time'])
+    return beautiful_path(G, coords1, distance, spatial, edges, coords, time, additional_param = 'noise')
+
+@app.route('/beautiful_path/air', methods=['POST'])
+def beautiful_path_noise_route():
+    keys = request.get_json()
+    coords = [keys['x'], keys['y']]
+    time = transform(keys['time'])
+    return beautiful_path(G, coords, distance, spatial, edges, coords, time, additional_param = 'air')
+
+@app.route('/beautiful_path', methods=['POST'])
+def beautiful():
+    keys = request.get_json()
+    coords = [keys['x'], keys['y']]
+    time = transform(keys['time'])
+    return beautiful_composite_request(G, coords, distance, spatial, edges, coords, time)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, threaded=True)
