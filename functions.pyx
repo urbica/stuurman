@@ -294,7 +294,7 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
         path3 = _connect_paths(G,  target_coords, source_coords, heuristic, spatial_index, dataset, 
                                                        coords, to_avoid, additional_param)
         
-        return get_path(path1+path2+path3, dataset, additional_param)
+        return get_response(path1+path2+path3, dataset, additional_param)
     
     else:
         while params:
