@@ -279,16 +279,16 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
         
         best = par.pop(0)
         path1 = paths[best]
-        av1 = int(len(node_paths[best])*0.03)
+        av1 = int(len(node_paths[best])*0.05)
         first = get_vector(best, source, coords)
         
         second_step = beautiful_path(G, coords[best], heuristic, spatial_index, dataset, coords, 
-                       cutoff, additional_param, avoid = node_paths[best][:-av1], first_step = first)
+                       cutoff, additional_param, avoid = node_paths[best][:-5], first_step = first)
         
         target_coords = coords[second_step[1]]
         path2 = second_step[0]
         second_step = second_step[2]
-        av2 = int(len(second_step)*0.03)
+        av2 = int(len(second_step)*0.05)
         to_avoid = node_paths[best][av1:]+second_step[:-av2]
         
         path3 = _connect_paths(G,  target_coords, source_coords, heuristic, spatial_index, dataset, 
