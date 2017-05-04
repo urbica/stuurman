@@ -1,0 +1,74 @@
+@import url('http://fonts.googleapis.com/css?family=Lato');
+
+body, html{
+  height: 100%;
+  background: #222222;
+  font-family: 'Lato', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+#mapid {
+  width: 100%;
+  height: 100vh;
+}
+
+.container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 500;
+}
+
+.container ul{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+}
+
+ul li{
+  color: #000000;
+  display: block;
+  position: relative;
+  float: left;
+  width: 200px;
+}
+
+ul li input[type=radio]{
+  position: absolute;
+  visibility: hidden;
+}
+
+ul li label{
+  display: block;
+  position: relative;
+  font-weight: 300;
+  font-size: 1.35em;
+  height: 60px;
+  z-index: 9;
+  cursor: pointer;
+  -webkit-transition: all 0.25s linear;
+  border: 2px solid #000000;
+  margin: 1px;
+  text-align: center;
+}
+
+ul li:hover label{
+  color: #4f4f4f;
+}
+
+ul li:hover .check {
+  border: 5px solid #2a2a2a;
+}
+
+input[type=radio]:checked ~ label{
+  background: black;
+  color: #ffffff;
+}
