@@ -1,25 +1,25 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        margin: 0;
-      }
-
-      #mapid {
-        width: 100%;
-        height: 100vh;
-      }
-    </style>
+    <link href="style.css" rel="stylesheet">
   </head>
   <body>
     <div id="mapid"></div>
+    <div class="container">
+      <ul>
+        <li>
+          <input type="radio" id="direct" name="selector" checked>
+          <label for="direct">Прямой</label>
+        </li>
+
+        <li>
+          <input type="radio" id="circular" name="selector">
+          <label for="circular">Погулять и вернуться</label>
+        </li>
+      </ul>
+    </div>
     <script>
       var mymap = L.map('mapid').setView([55.75, 37.65], 13);
 
@@ -70,7 +70,6 @@
         }
       }
 
-
       function style(feature) {
         return {
           color: getColor(feature.properties.color),
@@ -99,14 +98,48 @@
         };
       }
 
+      let type = 'direct';
+
+      const radioBox = document.querySelectorAll('input[name="selector"]');
+      console.log(radioBox);
+      radioBox.forEach(function (item) {
+        item.addEventListener('change', function (e) {
+
+          console.log(e.target.id);
+
+          if(e.target.id === 'circular') {
+            markerFinish.setOpacity(0);
+            airLayer.clearLayers();
+            noiseLayer.clearLayers();
+            myLayer.clearLayers();
+            underNoiseLayer.clearLayers();
+            underAirLayer.clearLayers();
+            underLayer.clearLayers();
+            type = 'circular';
+          } else {
+            markerFinish.setOpacity(1);
+            airLayer.clearLayers();
+            noiseLayer.clearLayers();
+            myLayer.clearLayers();
+            underNoiseLayer.clearLayers();
+            underAirLayer.clearLayers();
+            underLayer.clearLayers();
+            type = 'direct';
+          }
+        });
+      });
+
       const markerStart = L.marker([55.75, 37.67], { draggable: 'true' })
         .addTo(mymap);
       const markerFinish = L.marker([55.77, 37.69], { draggable: 'true' })
         .addTo(mymap);
 
-      var greenUrl = '/green';
-      var noiseUrl = '/noise';
-      var airUrl = '/air';
+      var greenUrl = 'http://stuurman.urbica.co/green';
+      var noiseUrl = 'http://stuurman.urbica.co/noise';
+      var airUrl = 'http://stuurman.urbica.co/air';
+      var beautifulGreenUrl = 'http://stuurman.urbica.co/beautiful_path/green';
+      var beautifulNoiseUrl = 'http://stuurman.urbica.co/beautiful_path/noise';
+      var beautifulAirUrl = 'http://stuurman.urbica.co/beautiful_path/air';
 
       var params = {
         x1: 37.69,
@@ -124,130 +157,42 @@
       var underNoiseLayer = L.geoJSON().addTo(mymap);
       var underAirLayer = L.geoJSON().addTo(mymap);
 
-      fetch(greenUrl, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json',
-          Accept: 'application/json'
-        },
-        body: JSON.stringify(params)
-      })
-        .then(function (response) {
-          return response.json();
-        })
-        .then(function (resp) {
-          myLayer.addData(resp);
-          underLayer.addData(resp);
-        });
-
-      fetch(noiseUrl, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json',
-          Accept: 'application/json'
-        },
-        body: JSON.stringify(params)
-      })
-        .then(function (response) {
-          return response.json();
-        })
-        .then(function (resp) {
-          noiseLayer.addData(resp);
-          underNoiseLayer.addData(resp);
-        });
-
-      fetch(airUrl, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json',
-          Accept: 'application/json'
-        },
-        body: JSON.stringify(params)
-      })
-        .then(function (response) {
-          return response.json();
-        })
-        .then(function (resp) {
-          noiseLayer.addData(resp);
-          underNoiseLayer.addData(resp);
-        });
-
       markerStart.on('dragend',
         function (event) {
           var marker = event.target;
           var startPosition = marker.getLatLng();
-          var params = {
-            x1: startPosition.lng,
-            y1: startPosition.lat,
-            x2: markerFinish.getLatLng().lng,
-            y2: markerFinish.getLatLng().lat
-          };
+          var params;
+
+          switch(type) {
+            case 'direct': {
+              params = {
+                x1: startPosition.lng,
+                y1: startPosition.lat,
+                x2: markerFinish.getLatLng().lng,
+                y2: markerFinish.getLatLng().lat
+              };
+              break;
+            }
+            case 'circular': {
+              params = {
+                x: startPosition.lng,
+                y: startPosition.lat,
+                time: 60
+              };
+              break;
+            }
+            default: {
+              return;
+            }
+          }
+          console.log(params);
 
           var d = new FormData();
           d.append("json", JSON.stringify(params));
-          fetch(greenUrl, {
-            method: 'POST',
-            mode: 'cors',
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Content-Type': 'application/json',
-              Accept: 'application/json'
-            },
-            body: JSON.stringify(params)
-          })
-            .then(function (response) {
-              return response.json();
-            })
-            .then(function (resp) {
-              myLayer.clearLayers();
-              underLayer.clearLayers();
-              underLayer = L.geoJSON(resp, { style: underStyle('#498F60') }).addTo(mymap)
-              myLayer = L.geoJSON(resp, { style: style }).addTo(mymap)
-            });
-          fetch(noiseUrl, {
-            method: 'POST',
-            mode: 'cors',
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Content-Type': 'application/json',
-              Accept: 'application/json'
-            },
-            body: JSON.stringify(params)
-          })
-            .then(function (response) {
-              return response.json();
-            })
-            .then(function (resp) {
-              noiseLayer.clearLayers();
-              underNoiseLayer.clearLayers();
-              noiseLayer = L.geoJSON(resp, { style: underStyle('#CD5031') }).addTo(mymap)
-              underNoiseLayer = L.geoJSON(resp, { style: noiseStyle }).addTo(mymap)
-            });
-          fetch(airUrl, {
-            method: 'POST',
-            mode: 'cors',
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Content-Type': 'application/json',
-              Accept: 'application/json'
-            },
-            body: JSON.stringify(params)
-          })
-            .then(function (response) {
-              return response.json();
-            })
-            .then(function (resp) {
-              airLayer.clearLayers();
-              underAirLayer.clearLayers();
-              airLayer = L.geoJSON(resp, { style: underStyle('#CD5031') }).addTo(mymap)
-              underAirLayer = L.geoJSON(resp, { style: airStyle }).addTo(mymap)
-            });
+
+          fetchGreenWay(params, type);
+          fetchNoiseWay(params, type);
+          fetchAirWay(params, type);
         }
       );
 
@@ -264,67 +209,152 @@
 
           var d = new FormData();
           d.append("json", JSON.stringify(params));
-          fetch(greenUrl, {
-            method: 'POST',
-            mode: 'cors',
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Content-Type': 'application/json',
-              Accept: 'application/json'
-            },
-            body: JSON.stringify(params)
-          })
-            .then(function (response) {
-              return response.json();
-            })
-            .then(function (resp) {
-              //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
-              myLayer.clearLayers();
-              underLayer.clearLayers();
-              //myLayer.addData(resp);
-              underLayer = L.geoJSON(resp, { style: underStyle('#498F60') }).addTo(mymap)
-              myLayer = L.geoJSON(resp, { style: style }).addTo(mymap)
-            });
-          fetch(noiseUrl, {
-            method: 'POST',
-            mode: 'cors',
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Content-Type': 'application/json',
-              Accept: 'application/json',
-            },
-            body: JSON.stringify(params)
-          })
-            .then(function (response) {
-              return response.json();
-            })
-            .then(function (resp) {
-              noiseLayer.clearLayers();
-              underNoiseLayer.clearLayers();
-              noiseLayer = L.geoJSON(resp, { style: underStyle('#CD5031') }).addTo(mymap)
-              underNoiseLayer = L.geoJSON(resp, { style: noiseStyle }).addTo(mymap)
-            });
-            fetch(airUrl, {
-            method: 'POST',
-            mode: 'cors',
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Content-Type': 'application/json',
-              Accept: 'application/json'
-            },
-            body: JSON.stringify(params)
-          })
-            .then(function (response) {
-              return response.json();
-            })
-            .then(function (resp) {
-              airLayer.clearLayers();
-              underAirLayer.clearLayers();
-              airLayer = L.geoJSON(resp, { style: underStyle('#CD5031') }).addTo(mymap)
-              underAirLayer = L.geoJSON(resp, { style: airStyle }).addTo(mymap)
-            });
+
+          fetchGreenWay(params);
+          fetchNoiseWay(params);
+          fetchAirWay(params);
         }
       );
+
+      function fetchAirWay(params, type) {
+        let url = airUrl;
+
+        if(type) {
+          switch(type) {
+            case 'direct': {
+              url = airUrl;
+              break;
+            }
+            case 'circular': {
+              url = beautifulAirUrl;
+              break;
+            }
+            default: {
+              return;
+            }
+          }
+        }
+
+        fetch(url, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify(params)
+        })
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (resp) {
+            airLayer.clearLayers();
+            underAirLayer.clearLayers();
+            underAirLayer = L.geoJSON(resp.geom, { style: underStyle('#CD5031') }).addTo(mymap);
+            airLayer = L.geoJSON(resp.geom, { style: airStyle }).addTo(mymap);
+            airLayer.bindPopup(`
+              <div>Длина: ${resp.length}</div>
+              <div>Время: ${resp.time}</div>
+              <div>Тип: ${resp.type}</div>
+            `);
+          });
+      }
+
+      function fetchNoiseWay(params, type) {
+        let url = noiseUrl;
+
+        if(type) {
+          switch(type) {
+            case 'direct': {
+              url = noiseUrl;
+              break;
+            }
+            case 'circular': {
+              url = beautifulNoiseUrl;
+              break;
+            }
+            default: {
+              return;
+            }
+          }
+        }
+
+        fetch(url, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify(params)
+        })
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (resp) {
+            noiseLayer.clearLayers();
+            underNoiseLayer.clearLayers();
+            underNoiseLayer = L.geoJSON(resp.geom, { style: underStyle('#CD5031') }).addTo(mymap);
+            noiseLayer = L.geoJSON(resp.geom, { style: noiseStyle }).addTo(mymap);
+            noiseLayer.bindPopup(`
+              <div>Длина: ${resp.length}</div>
+              <div>Время: ${resp.time}</div>
+              <div>Тип: ${resp.type}</div>
+            `);
+          });
+      }
+
+      function fetchGreenWay(params, type) {
+        let url = greenUrl;
+
+        if(type) {
+          switch(type) {
+            case 'direct': {
+              url = greenUrl;
+              break;
+            }
+            case 'circular': {
+              url = beautifulGreenUrl;
+              break;
+            }
+            default: {
+              return;
+            }
+          }
+        }
+
+        console.log(url);
+
+        fetch(url, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify(params)
+        })
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (resp) {
+            console.log(resp);
+            //return L.geoJSON(JSON.stringify(resp)).addTo(mymap);
+            myLayer.clearLayers();
+            underLayer.clearLayers();
+            //myLayer.addData(resp);
+            underLayer = L.geoJSON(resp.geom, { style: underStyle('#498F60') }).addTo(mymap);
+            myLayer = L.geoJSON(resp.geom, { style: style }).addTo(mymap);
+            myLayer.bindPopup(`
+              <div>Длина: ${resp.length}</div>
+              <div>Время: ${resp.time}</div>
+              <div>Тип: ${resp.type}</div>
+            `);
+          });
+      }
     </script>
   </body>
 </html>
