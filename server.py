@@ -6,9 +6,11 @@ from flask import Flask, request
 import networkx as nx
 from support import colorize, set_spatial_index, transform
 import pyximport
-pyximport.install()
 
+pyximport.install()
 from functions import bidirectional_astar, distance, composite_request
+
+pyximport.install()
 from get_back_func import beautiful_path, beautiful_composite_request
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -108,7 +110,7 @@ def beautiful_path_noise_route():
     return beautiful_path(G, coords1, distance, spatial, edges, coords, time, additional_param = 'noise')
 
 @app.route('/beautiful_path/air', methods=['POST'])
-def beautiful_path_noise_route():
+def beautiful_path_air_route():
     keys = request.get_json()
     coords = [keys['x'], keys['y']]
     time = transform(keys['time'])
