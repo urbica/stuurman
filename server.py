@@ -98,30 +98,30 @@ def air_route():
 @app.route('/beautiful_path/green', methods=['POST'])
 def beautiful_path_green_route():
     keys = request.get_json()
-    coords = [keys['x'], keys['y']]
+    coordinates = [keys['x'], keys['y']]
     time = transform(keys['time'])
-    return beautiful_path(G, coords1, distance, spatial, edges, coords, time, additional_param = 'green')
+    return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'green')
 
 @app.route('/beautiful_path/noise', methods=['POST'])
 def beautiful_path_noise_route():
     keys = request.get_json()
-    coords = [keys['x'], keys['y']]
+    coordinates = [keys['x'], keys['y']]
     time = transform(keys['time'])
-    return beautiful_path(G, coords1, distance, spatial, edges, coords, time, additional_param = 'noise')
+    return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'noise')
 
 @app.route('/beautiful_path/air', methods=['POST'])
 def beautiful_path_air_route():
     keys = request.get_json()
-    coords = [keys['x'], keys['y']]
+    coordinates = [keys['x'], keys['y']]
     time = transform(keys['time'])
-    return beautiful_path(G, coords, distance, spatial, edges, coords, time, additional_param = 'air')
+    return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'air')
 
 @app.route('/beautiful_path', methods=['POST'])
 def beautiful():
     keys = request.get_json()
-    coords = [keys['x'], keys['y']]
+    coordinates = [keys['x'], keys['y']]
     time = transform(keys['time'])
-    return beautiful_composite_request(G, coords, distance, spatial, edges, coords, time)
+    return beautiful_composite_request(G, coordinates, distance, spatial, edges, coords, time)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, threaded=True)
