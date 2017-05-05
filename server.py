@@ -12,7 +12,7 @@ from functions import bidirectional_astar, distance, composite_request, beautifu
 
 path = os.path.dirname(os.path.realpath(__file__))
 
-with open(path+'/graphs/edges_green_noise_air.pickle','r') as f:
+with open(path+'/graphs/edges_green_noise_air_restrictions.pickle','r') as f:
     edges = pickle.load(f)
 with open(path+'/graphs/nodes_osm.pickle','r') as f:
     nodes = pickle.load(f)
