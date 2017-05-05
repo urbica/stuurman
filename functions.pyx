@@ -53,15 +53,15 @@ def get_response(list_of_edges, dataset, param):
     if param != 'weight':
         data = dataset[dataset['id'].isin(list_of_edges)]
         data = data.rename(columns={'color_%s'%param:'color'})
-        length = dataset['len'].values.sum() 
-        time = dataset['time'].values.sum()
+        length = data['len'].values.sum() 
+        time = data['time'].values.sum()
         data = data[['geometry','color']]
         answer = """{"length":%f,"time":%i,"type":"%s","geom":%s}"""%(length, time, param, data.to_json())
         return answer
     else:
         data = dataset[dataset['id'].isin(list_of_edges)]
-        length = dataset['len'].values.sum() 
-        time = dataset['time'].values.sum()
+        length = data['len'].values.sum() 
+        time = data['time'].values.sum()
         answer = """{"length":%f,"time":%i,"type":"%s","geom":%s}"""%(length, time, param, data.to_json())
         return answer
 
