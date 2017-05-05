@@ -241,7 +241,7 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
             if avoid is not None:
                 if neighbor in avoid:
                     continue
-            cost = w.get('weight',None)
+            cost = w.get('time',None)
             additional = w.get(additional_param,1)
             if cost is None:
                 continue

@@ -23,11 +23,3 @@ def set_spatial_index(coordinates):
     for x,y in zip(coordinates.keys(),coordinates.values()):
         ind.add(x,y)
     return ind
-
-def transform(x):
-    if x == 30:
-        return 0.25
-    if x == 60:
-        return 0.5
-    if x == 90:
-        return 0.75

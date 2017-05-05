@@ -4,7 +4,7 @@ import pickle
 
 from flask import Flask, request
 import networkx as nx
-from support import colorize, set_spatial_index, transform
+from support import colorize, set_spatial_index
 import pyximport
 
 pyximport.install()
@@ -37,9 +37,10 @@ for x in range(edges.shape[0]):
     n = 1-edges.noise_ratio.values[x]
     air = 1-edges.air_ratio.values[x]
     edge_id = edges.id.values[x]
+    time = edges.time.values[x]
     G.add_node(a)
     G.add_node(b)
-    G.add_edge(a,b, {'weight':w, 'green':w*g, 'noise':w*n, 'air':w*air, 'id':edge_id})
+    G.add_edge(a,b, {'weight':w, 'green':w*g, 'noise':w*n, 'air':w*air, 'id':edge_id, 'time':time})
 
 spatial = set_spatial_index(coords)
 edges = edges[['id','color_green','color_noise','color_air','geometry', 'len', 'time']]
@@ -95,29 +96,28 @@ def air_route():
 def beautiful_path_green_route():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
-    time = transform(keys['time'])
+    time = keys['time']
     return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'green')
 
 @app.route('/beautiful_path/noise', methods=['POST'])
 def beautiful_path_noise_route():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
-    time = transform(keys['time'])
+    time = keys['time']
     return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'noise')
 
 @app.route('/beautiful_path/air', methods=['POST'])
 def beautiful_path_air_route():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
-    time = transform(keys['time'])
-    print time
+    time = keys['time']
     return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'air')
 
 @app.route('/beautiful_path', methods=['POST'])
 def beautiful():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
-    time = transform(keys['time'])
+    time = keys['time']
     return beautiful_composite_request(G, coordinates, distance, spatial, edges, coords, time)
 
 if __name__ == '__main__':
