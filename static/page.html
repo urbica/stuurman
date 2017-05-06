@@ -254,8 +254,8 @@
             underAirLayer = L.geoJSON(resp.geom, { style: underStyle('#CD5031') }).addTo(mymap);
             airLayer = L.geoJSON(resp.geom, { style: airStyle }).addTo(mymap);
             airLayer.bindPopup(`
-              <div>Длина: ${resp.length}</div>
-              <div>Время: ${resp.time}</div>
+              <div>Длина(км): ${resp.length}</div>
+              <div>Время(мин): ${resp.time}</div>
               <div>Тип: ${resp.type}</div>
             `);
           });
@@ -349,8 +349,8 @@
             underLayer = L.geoJSON(resp.geom, { style: underStyle('#498F60') }).addTo(mymap);
             myLayer = L.geoJSON(resp.geom, { style: style }).addTo(mymap);
             myLayer.bindPopup(`
-              <div>Длина: ${resp.length}</div>
-              <div>Время: ${resp.time}</div>
+              <div>Длина(км): ${resp.length}</div>
+              <div>Время(мин): ${resp.time}</div>
               <div>Тип: ${resp.type}</div>
             `);
           });
