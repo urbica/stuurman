@@ -48,6 +48,8 @@ ul li input[type=radio]{
 
 ul li label{
   display: block;
+  align-items: center;
+  justify-content: center;
   position: relative;
   font-weight: 300;
   font-size: 1.35em;

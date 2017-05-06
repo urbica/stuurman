@@ -299,8 +299,8 @@
             underNoiseLayer = L.geoJSON(resp.geom, { style: underStyle('#CD5031') }).addTo(mymap);
             noiseLayer = L.geoJSON(resp.geom, { style: noiseStyle }).addTo(mymap);
             noiseLayer.bindPopup(`
-              <div>Длина: ${resp.length}</div>
-              <div>Время: ${resp.time}</div>
+              <div>Длина(км): ${resp.length}</div>
+              <div>Время(мин): ${resp.time}</div>
               <div>Тип: ${resp.type}</div>
             `);
           });
