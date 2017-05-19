@@ -39,6 +39,10 @@ def find_nearest_node(coordinates, index):
     nearest_node = nearest[0]
     return nearest_node
 
+def bigger_bbox(bb):
+    bbox = tuple([x*0.9998 for x in bb[:2]]+[x*1.0002 for x in bb[2:]])
+    return bbox
+
 def get_path(list_of_edges, dataset, param):
     if param != 'weight':
         data = dataset[dataset.id.isin(list_of_edges)]
@@ -57,6 +61,7 @@ def get_response(list_of_edges, dataset, param):
         time = int(data['time'].values.sum())
         data = data[['geometry','color']]
         bbox = data.total_bounds
+        bbox = bigger_bbox(bbox)
         data = data.to_json()
         json_completer = (length,time,param)+bbox+(data,)
         answer = """{"length":%f,"time":%i,"type":"%s","zoom":{"sw":[%f,%f],"ne":[%f,%f]},"geom":%s}"""%json_completer
@@ -66,6 +71,7 @@ def get_response(list_of_edges, dataset, param):
         length = round(data['len'].values.sum()/1000,2)
         time = int(data['time'].values.sum())
         bbox = data.total_bounds
+        bbox = bigger_bbox(bbox)
         data = data.to_json()
         json_completer = (length,time,param)+bbox+(data,)
         answer = """{"length":%f,"time":%i,"type":"%s","zoom":{"sw":[%f,%f],"ne":[%f,%f]},"geom":%s}"""%json_completer
