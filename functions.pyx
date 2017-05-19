@@ -56,13 +56,19 @@ def get_response(list_of_edges, dataset, param):
         length = round(data['len'].values.sum()/1000,2)
         time = int(data['time'].values.sum())
         data = data[['geometry','color']]
-        answer = """{"length":%f,"time":%i,"type":"%s","geom":%s}"""%(length, time, param, data.to_json())
+        bbox = data.total_bounds
+        data = data.to_json()
+        json_completer = (length,time,param)+bbox+(data,)
+        answer = """{"length":%f,"time":%i,"type":"%s","zoom":{"sw":[%f,%f],"ne":[%f,%f]},"geom":%s}"""%json_completer
         return answer
     else:
         data = dataset[dataset['id'].isin(list_of_edges)]
         length = round(data['len'].values.sum()/1000,2)
         time = int(data['time'].values.sum())
-        answer = """{"length":%f,"time":%i,"type":"%s","geom":%s}"""%(length, time, param, data.to_json())
+        bbox = data.total_bounds
+        data = data.to_json()
+        json_completer = (length,time,param)+bbox+(data,)
+        answer = """{"length":%f,"time":%i,"type":"%s","zoom":{"sw":[%f,%f],"ne":[%f,%f]},"geom":%s}"""%json_completer
         return answer
 
 def distance(long p1, long p2, dict coords):
