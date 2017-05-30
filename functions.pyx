@@ -40,8 +40,8 @@ def find_nearest_node(coordinates, index):
     return nearest_node
 
 def bigger_bbox(bb):
-    diff_v =(bb[2]- bb[0])*1.0488
-    diff_g =(bb[3]- bb[1])*1.0488
+    diff_v =(bb[2]- bb[0])*0.316
+    diff_g =(bb[3]- bb[1])*0.316
     d = -1
     bb= list(bb)
     for x in range(len(bb)):
