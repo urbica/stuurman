@@ -40,8 +40,17 @@ def find_nearest_node(coordinates, index):
     return nearest_node
 
 def bigger_bbox(bb):
-    bbox = tuple([x*0.9998 for x in bb[:2]]+[x*1.0002 for x in bb[2:]])
-    return bbox
+    diff_v =(bb[2]- bb[0])*1.0488
+    diff_g =(bb[3]- bb[1])*1.0488
+    d = -1
+    bb= list(bb)
+    for x in range(len(bb)):
+        if x%2==0:
+            bb[x] = bb[x]+diff_v*d
+        else:
+            bb[x] = bb[x]+diff_g*d
+            d = 1
+    return tuple(bb)
 
 def get_path(list_of_edges, dataset, param):
     if param != 'weight':
