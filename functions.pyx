@@ -72,8 +72,8 @@ def get_response(list_of_edges, dataset, param):
         bbox = data.total_bounds
         bbox = bigger_bbox(bbox)
         data = data.to_json()
-        json_completer = (length,time,param)+bbox+(data,)
-        answer = """{"length":%f,"time":%i,"type":"%s","zoom":{"sw":[%f,%f],"ne":[%f,%f]},"geom":%s}"""%json_completer
+        json_completer = start+(length,time,param)+bbox+(data,)
+        answer = """{"start":[%f,%f],"length":%f,"time":%i,"type":"%s","zoom":{"sw":[%f,%f],"ne":[%f,%f]},"geom":%s}"""%json_completer
         return answer
     else:
         data = dataset[dataset['id'].isin(list_of_edges)]
@@ -82,8 +82,8 @@ def get_response(list_of_edges, dataset, param):
         bbox = data.total_bounds
         bbox = bigger_bbox(bbox)
         data = data.to_json()
-        json_completer = (length,time,param)+bbox+(data,)
-        answer = """{"length":%f,"time":%i,"type":"%s","zoom":{"sw":[%f,%f],"ne":[%f,%f]},"geom":%s}"""%json_completer
+        json_completer = start+(length,time,param)+bbox+(data,)
+        answer = """{"start":[%f,%f],"length":%f,"time":%i,"type":"%s","zoom":{"sw":[%f,%f],"ne":[%f,%f]},"geom":%s}"""%json_completer
         return answer
 
 def distance(long p1, long p2, dict coords):
@@ -103,6 +103,7 @@ def bidirectional_astar(G, source_coords,
     
     nod = tuple([find_nearest_node(x, spatial_index) for x in [source_coords, target_coords]])
     source,target = nod
+    start = coords[source]
     queue = [[(0, source, 0, None, None)], [(0, target, 0, None, None)]]
     enqueued = [{},{}]
     explored = [{}, {}]
@@ -134,7 +135,7 @@ def bidirectional_astar(G, source_coords,
                 node2 = explored[1-d][node2]
                 
             finalpath = list(path1)+list(path2)
-            return get_response(finalpath, dataset, additional_param)
+            return get_response(finalpath, dataset, start, additional_param)
         
         if v in explored[d]:
             continue
@@ -240,6 +241,7 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
                    cutoff, additional_param = 'weight', avoid = None, first_step = None): 
     
     source = find_nearest_node(source_coords, spatial_index)
+    start = coords[source]
     dist =  {}
     paths =  {source:[]}
     node_paths =  {source:[source]}
@@ -315,7 +317,7 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
         path3 = _connect_paths(G,  target_coords, source_coords, heuristic, spatial_index, dataset, 
                                                        coords, to_avoid, additional_param)
         
-        return get_response(path1+path2+path3, dataset, additional_param)
+        return get_response(path1+path2+path3, dataset, start, additional_param)
     
     else:
         while params:
