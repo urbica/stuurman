@@ -62,7 +62,7 @@ def get_path(list_of_edges, dataset, param):
         data = dataset[dataset.id.isin(list_of_edges)]
         return data.to_json()
     
-def get_response(list_of_edges, dataset, param):
+def get_response(list_of_edges, dataset, start, param):
     if param != 'weight':
         data = dataset[dataset['id'].isin(list_of_edges)]
         data = data.rename(columns={'color_%s'%param:'color'})
