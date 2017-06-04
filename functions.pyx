@@ -57,7 +57,7 @@ def bigger_bbox(bb):
                 d = 1
             else:
                 bb[x] = bb[x]+diff_g*d
-return tuple(bb)
+    return tuple(bb)
 
 def get_path(list_of_edges, dataset, param):
     if param != 'weight':
