@@ -40,23 +40,23 @@ def find_nearest_node(coordinates, index):
     return nearest_node
 
 def bigger_bbox(bb):
-diff_v = (bb[2]- bb[0])*0.5
+    diff_v = (bb[2]- bb[0])*0.5
 
-diff = (bb[3]- bb[1])
-diff_g =diff*0.1
-diff_g_kosyak =diff*0.4
+    diff = (bb[3]- bb[1])
+    diff_g =diff*0.1
+    diff_g_kosyak =diff*0.4
 
-d = -1
-bb= list(bb)
-for x in range(len(bb)):
-    if x%2==0:
-        bb[x] = bb[x]+diff_v*d
-    else:
-        if x == 1:
-            bb[x] = bb[x]+diff_g_kosyak*d
-            d = 1
+    d = -1
+    bb= list(bb)
+    for x in range(len(bb)):
+        if x%2==0:
+            bb[x] = bb[x]+diff_v*d
         else:
-            bb[x] = bb[x]+diff_g*d
+            if x == 1:
+                bb[x] = bb[x]+diff_g_kosyak*d
+                d = 1
+            else:
+                bb[x] = bb[x]+diff_g*d
 return tuple(bb)
 
 def get_path(list_of_edges, dataset, param):
