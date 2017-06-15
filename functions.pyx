@@ -294,7 +294,7 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
                 paths[neighbor] = paths[v] + [w.get('id',1)]
                 params[neighbor] = params[v] + additional
                 
-    er =  0.98*cutoff
+    er =  0.8*cutoff
     par = {}
     for x in paths.keys():
         if weights[x] < er:
@@ -307,28 +307,30 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
         
     if first_step == None:
         
-        best = par.pop(0)
+        best = par.pop()
         path1 = paths[best]
         #av1 = int(len(node_paths[best])*0.02)
         first = get_vector(best, source, coords)
         
         second_step = beautiful_path(G, coords[best], heuristic, spatial_index, dataset, coords, 
-                       cutoff, additional_param, avoid = node_paths[best][:-7], first_step = first)
+                       cutoff, additional_param, avoid = node_paths[best][:-5], first_step = first)
         
         target_coords = coords[second_step[1]]
         path2 = second_step[0]
         second_step = second_step[2]
         #av2 = int(len(second_step)*0.02)
-        to_avoid = node_paths[best][7:]+second_step[:-7]
+        to_avoid = node_paths[best][5:]+second_step[:-5]
         
         path3 = _connect_paths(G,  target_coords, source_coords, heuristic, spatial_index, dataset, 
                                                        coords, to_avoid, additional_param)
         
-        return get_response(path1+path2+path3, dataset, start, additional_param)
+        return get_response(path1+
+                            path2+
+                            path3, dataset, start, additional_param)
     
     else:
         while params:
-            best = par.pop(0)
+            best = par.pop()
             best_vect = get_vector(source, best, coords)
             if pi*0.2 < get_circ(best_vect, first_step) < pi*0.5:
                 break
