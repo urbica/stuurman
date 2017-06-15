@@ -198,7 +198,7 @@ def _connect_paths(G, source_coords,
         _, v, dist, parent, edge = heappop(queue[d])
         
         if v in explored[1-d]:
-            if v is not None:
+            if v is not None and explored[1-d][v] is not None:
                 path1 = deque([edge])
                 w = G[explored[1-d][v]][v]
                 path2 = deque([w.get('id',1)])
@@ -227,8 +227,8 @@ def _connect_paths(G, source_coords,
         edge_parent[d][v] = edge
         
         for neighbor, w in neighs_iter(v, G):
-            #if len(G[neighbor])==1:
-            #    continue
+            if len(G[neighbor])==1:
+                continue
             if neighbor in explored[d]:
                 continue
             if neighbor in avoid:
@@ -296,14 +296,14 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
                 paths[neighbor] = paths[v] + [w.get('id',1)]
                 params[neighbor] = params[v] + additional
                 
-    #er =  0.8*cutoff
+    er =  0.8*cutoff
     par = {}
     for x in paths.keys():
-        #if weights[x] < er:
+        if weights[x] > er:
             #del paths[x]
             #del node_paths[x]
         #else:
-        par[x] = params[x]
+            par[x] = params[x]
 
     par = sorted(par, key=par.get, reverse = False)
         
@@ -333,9 +333,11 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
     else:
         #while params:
         best = par.pop()
+        if best == source:
+            best = par.pop()
             #best_vect = get_vector(source, best, coords)
-            #if pi*0.1 < abs(get_circ(best_vect, first_step)) < pi*0.6:
-                #break
+            #if pi*0.15 < abs(get_circ(best_vect, first_step)) < pi*0.85:
+             #   break
         return paths[best], best, node_paths[best]
     
 def beautiful_composite_request(G, source_coords, heuristic, spatial_index, dataset, coords, cutoff):
