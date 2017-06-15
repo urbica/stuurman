@@ -2,9 +2,9 @@ version: '2'
 
 services:
   stuurman:
-    build: .
+    image: gitlab.urbica.co:5001/urbica/stuurman:master
     container_name: stuurman
-    restart: always
+    restart: unless-stopped
     environment:
       - VIRTUAL_HOST=stuurman.urbica.co
     volumes:
