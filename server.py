@@ -5,6 +5,7 @@ import csv
 import datetime
 
 from flask import Flask, request
+#from werkzeug.contrib.fixers import ProxyFix
 import networkx as nx
 from support import colorize, set_spatial_index
 import pyximport
@@ -18,6 +19,8 @@ with open(path+'/graphs/edges_green_noise_air_restrictions.pickle','r') as f:
     edges = pickle.load(f)
 with open(path+'/graphs/nodes_osm.pickle','r') as f:
     nodes = pickle.load(f)
+
+print 'starting to collect graph'
 
 nodes = nodes[(nodes['id'].isin(edges['source']))|(nodes['id'].isin(edges['target']))]
 
@@ -52,7 +55,7 @@ G = G.adj
 
 #beatiful_path_logger= csv.writer(open('stuurman_local/logs_beatiful_path.csv','a'))
 #bidirectional_astar_logger= csv.writer(open('stuurman_local/logs_a_b.csv','a'))
-
+print 'now ready'
 
 app = Flask(__name__)
 
@@ -137,6 +140,8 @@ def beautiful():
     #beatiful_path_logger.writerow([coordinates, time, datetime.datetime.now()])
     return beautiful_composite_request(G, coordinates, distance, spatial, edges, coords, time)
 
+
+#app.wsgi_app = ProxyFix(app.wsgi_app)
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, threaded=True)
+    app.run(host='0.0.0.0', threaded=True)
     print 'Running'

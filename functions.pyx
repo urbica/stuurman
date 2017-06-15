@@ -166,6 +166,7 @@ def bidirectional_astar(G, source_coords,
             enqueued[d][neighbor] = ncost, h
             e = w.get('id',1)
             heappush(queue[d], (ncost+h, neighbor, ncost, v, e))
+    raise Exception('Path between given nodes does not exist.')
 
             
 def composite_request(G, source_coords, target_coords, heuristic, spatial_index, dataset, coords):
@@ -226,8 +227,8 @@ def _connect_paths(G, source_coords,
         edge_parent[d][v] = edge
         
         for neighbor, w in neighs_iter(v, G):
-            if len(G[neighbor])==1:
-                continue
+            #if len(G[neighbor])==1:
+            #    continue
             if neighbor in explored[d]:
                 continue
             if neighbor in avoid:
@@ -243,6 +244,7 @@ def _connect_paths(G, source_coords,
             enqueued[d][neighbor] = ncost, h
             e = w.get('id',1)
             heappush(queue[d], (ncost+h, neighbor, ncost, v, e))
+    raise Exception('Path between given nodes does not exist.')
 
 def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords, 
                    cutoff, additional_param = 'weight', avoid = None, first_step = None): 
@@ -294,14 +296,14 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
                 paths[neighbor] = paths[v] + [w.get('id',1)]
                 params[neighbor] = params[v] + additional
                 
-    er =  0.8*cutoff
+    #er =  0.8*cutoff
     par = {}
     for x in paths.keys():
-        if weights[x] < er:
-            del paths[x]
-            del node_paths[x]
-        else:
-            par[x] = params[x]
+        #if weights[x] < er:
+            #del paths[x]
+            #del node_paths[x]
+        #else:
+        par[x] = params[x]
 
     par = sorted(par, key=par.get, reverse = False)
         
