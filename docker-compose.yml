@@ -2,7 +2,7 @@ version: '2'
 
 services:
   stuurman:
-    image: gitlab.urbica.co:5001/urbica/stuurman:master
+    build: .
     container_name: stuurman
     restart: unless-stopped
     environment:
