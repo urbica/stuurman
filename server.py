@@ -133,7 +133,7 @@ def beautiful_path_air_route():
 def beautiful():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
-    time = keys['time']/3
+    time = keys['time']/4
     #beatiful_path_logger.writerow([coordinates, time, datetime.datetime.now()])
     return beautiful_composite_request(G, coordinates, distance, spatial, edges, coords, time)
 
