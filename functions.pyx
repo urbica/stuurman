@@ -312,7 +312,7 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
         best = par.pop()
         path1 = paths[best]
         #av1 = int(len(node_paths[best])*0.02)
-        first = get_vector(best, source, coords)
+        first = get_vector(source, best, coords)
         
         second_step = beautiful_path(G, coords[best], heuristic, spatial_index, dataset, coords, 
                        cutoff, additional_param, avoid = node_paths[best][:-7], first_step = first)
@@ -331,13 +331,12 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
                             path3, dataset, start, additional_param)
     
     else:
-        #while params:
-        best = par.pop()
-        if best == source:
+        del params[source]
+        while params:
             best = par.pop()
-            #best_vect = get_vector(source, best, coords)
-            #if pi*0.15 < abs(get_circ(best_vect, first_step)) < pi*0.85:
-             #   break
+            best_vect = get_vector(source, best, coords)
+            if pi*0.15 < get_circ(best_vect, first_step):
+                break
         return paths[best], best, node_paths[best]
     
 def beautiful_composite_request(G, source_coords, heuristic, spatial_index, dataset, coords, cutoff):
