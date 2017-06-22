@@ -118,32 +118,32 @@ def air_route():
 def beautiful_path_green_route():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
-    time = keys['time']/3
-    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time, datetime.datetime.now()])
+    time = keys['time']/4.0
+    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time*4, datetime.datetime.now()])
     return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'green')
 
 @app.route('/beautiful_path/noise', methods=['POST'])
 def beautiful_path_noise_route():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
-    time = keys['time']/3
-    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time, datetime.datetime.now()])
+    time = keys['time']/4.0
+    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time*4, datetime.datetime.now()])
     return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'noise')
 
 @app.route('/beautiful_path/air', methods=['POST'])
 def beautiful_path_air_route():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
-    time = keys['time']/3
-    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time, datetime.datetime.now()])
+    time = keys['time']/4.0
+    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time*4, datetime.datetime.now()])
     return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'air')
 
 @app.route('/beautiful_path', methods=['POST'])
 def beautiful():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
-    time = keys['time']/4
-    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time, datetime.datetime.now()])
+    time = keys['time']/4.0
+    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time*4, datetime.datetime.now()])
     return beautiful_composite_request(G, coordinates, distance, spatial, edges, coords, time)
 
 
