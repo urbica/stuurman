@@ -79,7 +79,7 @@ def walking():
     keys = request.get_json()
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
-    writeLog(bidirectional_astar_logger, [coords1,coords2, datetime.datetime.now()])
+    writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
     return composite_request(G, coords1, coords2, distance, spatial, edges, coords)
 
 @app.route('/shortest', methods=['POST'])
@@ -87,7 +87,7 @@ def shortest_route():
     keys = request.get_json()
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
-    writeLog(bidirectional_astar_logger, [coords1,coords2, datetime.datetime.now()])
+    writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
     return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords)
 
 @app.route('/green', methods=['POST'])
@@ -95,7 +95,7 @@ def green_route():
     keys = request.get_json()
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
-    writeLog(bidirectional_astar_logger, [coords1,coords2, datetime.datetime.now()])
+    writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
     return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords, additional_param = 'green')
 
 @app.route('/noise', methods=['POST'])
@@ -103,7 +103,7 @@ def noisy_route():
     keys = request.get_json()
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
-    writeLog(bidirectional_astar_logger, [coords1,coords2, datetime.datetime.now()])
+    writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
     return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords, additional_param = 'noise')
 
 @app.route('/air', methods=['POST'])
@@ -111,7 +111,7 @@ def air_route():
     keys = request.get_json()
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
-    writeLog(bidirectional_astar_logger, [coords1,coords2, datetime.datetime.now()])
+    writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
     return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords, additional_param = 'air')
 
 @app.route('/beautiful_path/green', methods=['POST'])
@@ -119,7 +119,7 @@ def beautiful_path_green_route():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
     time = keys['time']/3
-    writeLog(beatiful_path_logger, [coordinates, time, datetime.datetime.now()])
+    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time, datetime.datetime.now()])
     return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'green')
 
 @app.route('/beautiful_path/noise', methods=['POST'])
@@ -127,7 +127,7 @@ def beautiful_path_noise_route():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
     time = keys['time']/3
-    writeLog(beatiful_path_logger, [coordinates, time, datetime.datetime.now()])
+    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time, datetime.datetime.now()])
     return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'noise')
 
 @app.route('/beautiful_path/air', methods=['POST'])
@@ -135,7 +135,7 @@ def beautiful_path_air_route():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
     time = keys['time']/3
-    writeLog(beatiful_path_logger, [coordinates, time, datetime.datetime.now()])
+    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time, datetime.datetime.now()])
     return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'air')
 
 @app.route('/beautiful_path', methods=['POST'])
@@ -143,7 +143,7 @@ def beautiful():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
     time = keys['time']/4
-    writeLog(beatiful_path_logger, [coordinates, time, datetime.datetime.now()])
+    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time, datetime.datetime.now()])
     return beautiful_composite_request(G, coordinates, distance, spatial, edges, coords, time)
 
 
