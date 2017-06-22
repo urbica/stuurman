@@ -53,8 +53,8 @@ spatial = set_spatial_index(coords)
 edges = edges[['id','color_green','color_noise','color_air','geometry', 'len', 'time']]
 G = G.adj
 
-beatiful_path_logger= path+'/logs_get_back.csv'
-bidirectional_astar_logger= path+'/logs_a_b.csv'
+beatiful_path_logger= path+'/logs/logs_get_back.csv'
+bidirectional_astar_logger= path+'/logs/logs_a_b.csv'
 
 def writeLog(file, data):
     with open(file,'a') as fi:

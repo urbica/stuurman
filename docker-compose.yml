@@ -9,6 +9,7 @@ services:
       - VIRTUAL_HOST=stuurman.urbica.co
     volumes:
       - ./graphs:/usr/src/app/graphs
+      - ./logs:/usr/src/app/logs
 
 networks:
   default:
