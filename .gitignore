@@ -2,3 +2,5 @@
 *.pyc
 graphs
 stuurman_local
+logs_get_back.csv
+logs_a_b.csv
