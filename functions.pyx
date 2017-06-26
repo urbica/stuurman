@@ -1,9 +1,15 @@
-from math import pow
 from heapq import heappop, heappush
 from rtree import index
 from itertools import count
 from collections import deque
 from numpy import arccos, pi
+from shapely.geometry import Point
+
+def check_point(coordinates, border):
+    if Point(coordinates).intersects(border):
+        return True
+    else:
+        return False
 
 def check_similarity(list l,list l2):
     i =  len(set(l2)-set(l))
@@ -170,14 +176,19 @@ def bidirectional_astar(G, source_coords,
 
             
 def composite_request(G, source_coords, target_coords, heuristic, spatial_index, dataset, coords):
-    green_route =  bidirectional_astar(G, source_coords, target_coords, 
-                                       heuristic, spatial_index, dataset, coords, additional_param = 'green')
-    noisy_route = bidirectional_astar(G, source_coords, target_coords, 
-                                       heuristic, spatial_index, dataset, coords, additional_param = 'noise')
-    air_route = bidirectional_astar(G, source_coords, target_coords, 
-                                       heuristic, spatial_index, dataset, coords, additional_param = 'air')
-    answer = """[%s, %s, %s]"""%(green_route,noisy_route,air_route)
-    return answer
+
+    try:
+        green_route =  bidirectional_astar(G, source_coords, target_coords, 
+                                           heuristic, spatial_index, dataset, coords, additional_param = 'green')
+        noisy_route = bidirectional_astar(G, source_coords, target_coords, 
+                                           heuristic, spatial_index, dataset, coords, additional_param = 'noise')
+        air_route = bidirectional_astar(G, source_coords, target_coords, 
+                                           heuristic, spatial_index, dataset, coords, additional_param = 'air')
+        answer = """[%s, %s, %s]"""%(green_route,noisy_route,air_route)
+        return answer
+
+    except Exception as e:
+        return '''{"error":0}'''
 
 def _connect_paths(G, source_coords, 
                         target_coords, heuristic,
@@ -340,11 +351,16 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
         return paths[best], best, node_paths[best]
     
 def beautiful_composite_request(G, source_coords, heuristic, spatial_index, dataset, coords, cutoff):
-    green_route =  beautiful_path(G, source_coords, heuristic, spatial_index, dataset, 
-                                       coords, cutoff, additional_param = 'green')
-    noisy_route = beautiful_path(G, source_coords, heuristic, spatial_index, dataset, 
-                                       coords, cutoff, additional_param = 'noise')
-    air_route = beautiful_path(G, source_coords, heuristic, spatial_index, dataset, 
-                                       coords, cutoff, additional_param = 'air')
-    answer = """[%s, %s, %s]"""%(green_route,noisy_route,air_route)
-    return answer
+    
+    try:
+        green_route =  beautiful_path(G, source_coords, heuristic, spatial_index, dataset, 
+                                           coords, cutoff, additional_param = 'green')
+        noisy_route = beautiful_path(G, source_coords, heuristic, spatial_index, dataset, 
+                                           coords, cutoff, additional_param = 'noise')
+        air_route = beautiful_path(G, source_coords, heuristic, spatial_index, dataset, 
+                                           coords, cutoff, additional_param = 'air')
+        answer = """[%s, %s, %s]"""%(green_route,noisy_route,air_route)
+        return answer
+
+    except Exception as e:
+        return '''{"error":0}'''

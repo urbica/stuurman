@@ -11,7 +11,7 @@ from support import colorize, set_spatial_index
 import pyximport
 
 pyximport.install()
-from functions import bidirectional_astar, distance, composite_request, beautiful_path, beautiful_composite_request
+from functions import bidirectional_astar, distance, composite_request, beautiful_path, beautiful_composite_request, check_point
 
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -19,6 +19,8 @@ with open(path+'/graphs/edges_green_noise_air_restrictions.pickle','r') as f:
     edges = pickle.load(f)
 with open(path+'/graphs/nodes_osm.pickle','r') as f:
     nodes = pickle.load(f)
+with open(path+'/static/border.pickle','r') as f:
+    border = pickle.load(f)
 
 print 'starting to collect graph'
 
@@ -61,6 +63,8 @@ def writeLog(file, data):
         logger = csv.writer(fi)
         logger.writerow(data)
 
+point_in_polygon_error = '''{"error":1}'''
+
 print 'now ready'
 
 app = Flask(__name__)
@@ -79,72 +83,100 @@ def walking():
     keys = request.get_json()
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
-    writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
-    return composite_request(G, coords1, coords2, distance, spatial, edges, coords)
+    if check_point(coords1, border) and check_point(coords2, border):
+        writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
+        return composite_request(G, coords1, coords2, distance, spatial, edges, coords)
+    else:
+        return point_in_polygon_error
+
 
 @app.route('/shortest', methods=['POST'])
 def shortest_route():
     keys = request.get_json()
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
-    writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
-    return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords)
+    if check_point(coords1, border) and check_point(coords2, border):
+        writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
+        return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords)
+    else:
+        return point_in_polygon_error
 
 @app.route('/green', methods=['POST'])
 def green_route():
     keys = request.get_json()
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
-    writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
-    return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords, additional_param = 'green')
+    if check_point(coords1, border) and check_point(coords2, border):
+        writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
+        return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords, additional_param = 'green')
+    else:
+        return point_in_polygon_error
 
 @app.route('/noise', methods=['POST'])
 def noisy_route():
     keys = request.get_json()
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
-    writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
-    return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords, additional_param = 'noise')
+    if check_point(coords1, border) and check_point(coords2, border):
+        writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
+        return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords, additional_param = 'noise')
+    else:
+        return point_in_polygon_error
 
 @app.route('/air', methods=['POST'])
 def air_route():
     keys = request.get_json()
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
-    writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
-    return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords, additional_param = 'air')
+    if check_point(coords1, border) and check_point(coords2, border):
+        writeLog(bidirectional_astar_logger, [coords1[0],coords1[1],coords2[0],coords2[1], datetime.datetime.now()])
+        return bidirectional_astar(G, coords1, coords2, distance, spatial, edges, coords, additional_param = 'air')
+    else:
+        return point_in_polygon_error
 
 @app.route('/beautiful_path/green', methods=['POST'])
 def beautiful_path_green_route():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
     time = keys['time']/4.0
-    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time*4, datetime.datetime.now()])
-    return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'green')
+    if check_point(coordinates, border):
+        writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time*4, datetime.datetime.now()])
+        return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'green')
+    else:
+        return point_in_polygon_error
 
 @app.route('/beautiful_path/noise', methods=['POST'])
 def beautiful_path_noise_route():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
     time = keys['time']/4.0
-    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time*4, datetime.datetime.now()])
-    return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'noise')
+    if check_point(coordinates, border):
+        writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time*4, datetime.datetime.now()])
+        return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'noise')
+    else:
+        return point_in_polygon_error
 
 @app.route('/beautiful_path/air', methods=['POST'])
 def beautiful_path_air_route():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
     time = keys['time']/4.0
-    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time*4, datetime.datetime.now()])
-    return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'air')
+    if check_point(coordinates, border):
+        writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time*4, datetime.datetime.now()])
+        return beautiful_path(G, coordinates, distance, spatial, edges, coords, time, additional_param = 'air')
+    else:
+        return point_in_polygon_error
 
 @app.route('/beautiful_path', methods=['POST'])
 def beautiful():
     keys = request.get_json()
     coordinates = [keys['x'], keys['y']]
     time = keys['time']/4.0
-    writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time*4, datetime.datetime.now()])
-    return beautiful_composite_request(G, coordinates, distance, spatial, edges, coords, time)
+    if check_point(coordinates, border):
+        writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time*4, datetime.datetime.now()])
+        return beautiful_composite_request(G, coordinates, distance, spatial, edges, coords, time)
+    else:
+        return point_in_polygon_error
 
 
 #app.wsgi_app = ProxyFix(app.wsgi_app)
