@@ -38,7 +38,8 @@ URLs:
 ## Примеры:
 | URL               | cURL example                                                                          |
 |-------------------|---------------------------------------------------------------------------------------|
-| `/ws`             | curl -X POST -H "Content-Type: application/json" http://0.0.0.0:5000/ws -d            | |                   |'{"x1":37.634390,"y1":55.758851,"x2":37.702678,"y2":55.612287}'                        |
+| `/ws`             | curl -X POST -H "Content-Type: application/json" http://0.0.0.0:5000/ws -d            |
+|                   |'{"x1":37.634390,"y1":55.758851,"x2":37.702678,"y2":55.612287}'                        |
 |`/beautiful_path`  | curl -X POST -H "Content-Type: application/json" http://0.0.0.0:5000/beautiful_path -d|
 |                   |'{"x":37.634390,"y":55.758851,"time":30}'                                              |
 
