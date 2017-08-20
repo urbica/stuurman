@@ -17,7 +17,7 @@ def check_similarity(list l,list l2):
     if i/len(l2) > 0.9 or i2/len(l2) > 0.9:
         return True
     return False
-    
+
 def vector_dist(tuple vector):
     cdef float d
     d = vector[0]**2+vector[1]**2
@@ -30,7 +30,7 @@ def get_circ(tuple vector1, tuple vector2):
     total_evklid = evklid1*evklid2
     answer = scal/total_evklid
     return arccos(answer)
-    
+
 def get_vector(long node1,long node2, dict list_of_coords):
     cdef tuple coords1, coords2
     cdef float x, y
@@ -74,10 +74,10 @@ def get_path(list_of_edges, dataset, param):
     else:
         data = dataset[dataset.id.isin(list_of_edges)]
         return data.to_json()
-    
+
 def get_response(list_of_edges, dataset, start, param):
+    data = dataset[dataset['id'].isin(list_of_edges)]
     if param != 'weight':
-        data = dataset[dataset['id'].isin(list_of_edges)]
         data = data.rename(columns={'color_%s'%param:'color'})
         length = round(data['len'].values.sum()/1000,2)
         time = int(data['time'].values.sum())
@@ -89,7 +89,6 @@ def get_response(list_of_edges, dataset, start, param):
         answer = """{"start":[%f,%f],"length":%f,"time":%i,"type":"%s","zoom":{"sw":[%f,%f],"ne":[%f,%f]},"geom":%s}"""%json_completer
         return answer
     else:
-        data = dataset[dataset['id'].isin(list_of_edges)]
         length = round(data['len'].values.sum()/1000,2)
         time = int(data['time'].values.sum())
         bbox = data.total_bounds
@@ -109,11 +108,11 @@ def neighs_iter(key, g):
     for x in g[key].items():
         yield x
 
-def bidirectional_astar(G, source_coords, 
+def bidirectional_astar(G, source_coords,
                         target_coords, heuristic,
-                        spatial_index, dataset, 
+                        spatial_index, dataset,
                         coords, additional_param='weight'):
-    
+
     nod = tuple([find_nearest_node(x, spatial_index) for x in [source_coords, target_coords]])
     source,target = nod
     start = coords[source]
@@ -123,11 +122,11 @@ def bidirectional_astar(G, source_coords,
     edge_parent = [{}, {}]
     heu = [target,source]
     d=1
-    
+
     while queue[0] and queue[1]:
         d = 1-d
         _, v, dist, parent, edge = heappop(queue[d])
-        
+
         if v in explored[1-d]:
             if v is not None and explored[1-d][v] is not None:
                 path1 = deque([edge])
@@ -138,24 +137,24 @@ def bidirectional_astar(G, source_coords,
                 path2 = deque([])
             node1 = parent
             node2 = explored[1-d][v]
-            
+
             while node1 is not None:
                 path1.appendleft(edge_parent[d][node1])
                 node1 = explored[d][node1]
-                
+
             while node2 is not None:
                 path2.append(edge_parent[1-d][node2])
                 node2 = explored[1-d][node2]
-                
+
             finalpath = list(path1)+list(path2)
             return get_response(finalpath, dataset, start, additional_param)
-        
+
         if v in explored[d]:
             continue
-        
+
         explored[d][v] = parent
         edge_parent[d][v] = edge
-        
+
         for neighbor, w in neighs_iter(v, G):
             if len(G[neighbor])==1:
                 continue
@@ -168,21 +167,20 @@ def bidirectional_astar(G, source_coords,
                     continue
             else:
                 h = heuristic(neighbor, heu[d], coords)
-            
+
             enqueued[d][neighbor] = ncost, h
             e = w.get('id',1)
             heappush(queue[d], (ncost+h, neighbor, ncost, v, e))
     raise Exception('Path between given nodes does not exist.')
 
-            
-def composite_request(G, source_coords, target_coords, heuristic, spatial_index, dataset, coords):
 
+def composite_request(G, source_coords, target_coords, heuristic, spatial_index, dataset, coords):
     try:
-        green_route =  bidirectional_astar(G, source_coords, target_coords, 
+        green_route =  bidirectional_astar(G, source_coords, target_coords,
                                            heuristic, spatial_index, dataset, coords, additional_param = 'green')
-        noisy_route = bidirectional_astar(G, source_coords, target_coords, 
+        noisy_route = bidirectional_astar(G, source_coords, target_coords,
                                            heuristic, spatial_index, dataset, coords, additional_param = 'noise')
-        air_route = bidirectional_astar(G, source_coords, target_coords, 
+        air_route = bidirectional_astar(G, source_coords, target_coords,
                                            heuristic, spatial_index, dataset, coords, additional_param = 'air')
         answer = """[%s, %s, %s]"""%(green_route,noisy_route,air_route)
         return answer
@@ -190,11 +188,11 @@ def composite_request(G, source_coords, target_coords, heuristic, spatial_index,
     except Exception as e:
         return '''{"error":0}'''
 
-def _connect_paths(G, source_coords, 
+def _connect_paths(G, source_coords,
                         target_coords, heuristic,
-                        spatial_index, dataset, 
+                        spatial_index, dataset,
                         coords, avoid, additional_param='weight'):
-    
+
     nod = tuple([find_nearest_node(x, spatial_index) for x in [source_coords, target_coords]])
     source,target = nod
     queue = [[(0, source, 0, None, None)], [(0, target, 0, None, None)]]
@@ -203,11 +201,11 @@ def _connect_paths(G, source_coords,
     edge_parent = [{}, {}]
     heu = [target,source]
     d=1
-    
+
     while queue[0] and queue[1]:
         d = 1-d
         _, v, dist, parent, edge = heappop(queue[d])
-        
+
         if v in explored[1-d]:
             if v is not None and explored[1-d][v] is not None:
                 path1 = deque([edge])
@@ -218,25 +216,25 @@ def _connect_paths(G, source_coords,
                 path2 = deque([])
             node1 = parent
             node2 = explored[1-d][v]
-            
+
             while node1 is not None:
                 path1.appendleft(edge_parent[d][node1])
                 node1 = explored[d][node1]
-                
+
             while node2 is not None:
                 path2.append(edge_parent[1-d][node2])
                 node2 = explored[1-d][node2]
-                
+
             finalpath = list(path1)+list(path2)
-            
+
             return finalpath
-        
+
         if v in explored[d]:
             continue
-        
+
         explored[d][v] = parent
         edge_parent[d][v] = edge
-        
+
         for neighbor, w in neighs_iter(v, G):
             if len(G[neighbor])==1:
                 continue
@@ -251,27 +249,27 @@ def _connect_paths(G, source_coords,
                     continue
             else:
                 h = heuristic(neighbor, heu[d], coords)
-            
+
             enqueued[d][neighbor] = ncost, h
             e = w.get('id',1)
             heappush(queue[d], (ncost+h, neighbor, ncost, v, e))
     raise Exception('Path between given nodes does not exist.')
 
-def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords, 
-                   cutoff, additional_param = 'weight', avoid = None, first_step = None): 
-    
+def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
+                   cutoff, additional_param = 'weight', avoid = None, first_step = None):
+
     source = find_nearest_node(source_coords, spatial_index)
     start = coords[source]
     dist =  {}
     paths =  {source:[]}
     node_paths =  {source:[source]}
-    fringe = [] 
+    fringe = []
     seen =   {source:0}
     heappush(fringe, (0, 0, 0, source))
     finalpath = []
     weights = {}
     params = {}
-    
+
     while fringe:
         (d, k, p, v) = heappop(fringe)
         if v in dist:
@@ -279,7 +277,7 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
         dist[v] = d
         weights[v] = k
         params[v] = p
-        
+
         for neighbor, w in neighs_iter(v, G):
             if avoid is not None:
                 if neighbor in avoid:
@@ -291,22 +289,22 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
             vu_dist = dist[v] + additional
             real_weight = weights[v] + cost
             param = params[v] + additional
-            
+
             if real_weight > cutoff:
                 continue
-                
+
             if neighbor in dist:
                 if vu_dist < dist[neighbor]:
                     raise ValueError('Contradictory paths found:',
                                      'negative weights?')
-                    
+
             elif neighbor not in seen or vu_dist < seen[neighbor]:
                 seen[neighbor] = vu_dist
                 heappush(fringe, (vu_dist, real_weight, param, neighbor))
                 node_paths[neighbor] = node_paths[v] + [neighbor]
                 paths[neighbor] = paths[v] + [w.get('id',1)]
                 params[neighbor] = params[v] + additional
-                
+
     er =  0.8*cutoff
     par = {}
     for x in paths.keys():
@@ -317,30 +315,30 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
             par[x] = params[x]
 
     par = sorted(par, key=par.get, reverse = False)
-        
+
     if first_step == None:
-        
+
         best = par.pop()
         path1 = paths[best]
         #av1 = int(len(node_paths[best])*0.02)
         first = get_vector(source, best, coords)
-        
-        second_step = beautiful_path(G, coords[best], heuristic, spatial_index, dataset, coords, 
+
+        second_step = beautiful_path(G, coords[best], heuristic, spatial_index, dataset, coords,
                        cutoff, additional_param, avoid = node_paths[best][:-7], first_step = first)
-        
+
         target_coords = coords[second_step[1]]
         path2 = second_step[0]
         second_step = second_step[2]
         #av2 = int(len(second_step)*0.02)
         to_avoid = node_paths[best][7:]+second_step[:-7]
-        
-        path3 = _connect_paths(G,  target_coords, source_coords, heuristic, spatial_index, dataset, 
+
+        path3 = _connect_paths(G,  target_coords, source_coords, heuristic, spatial_index, dataset,
                                                        coords, to_avoid, additional_param)
-        
+
         return get_response(path1+
                             path2+
                             path3, dataset, start, additional_param)
-    
+
     else:
         del params[source]
         while params:
@@ -349,15 +347,15 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
             if pi*0.15 < get_circ(best_vect, first_step):
                 break
         return paths[best], best, node_paths[best]
-    
+
 def beautiful_composite_request(G, source_coords, heuristic, spatial_index, dataset, coords, cutoff):
-    
+
     try:
-        green_route =  beautiful_path(G, source_coords, heuristic, spatial_index, dataset, 
+        green_route =  beautiful_path(G, source_coords, heuristic, spatial_index, dataset,
                                            coords, cutoff, additional_param = 'green')
-        noisy_route = beautiful_path(G, source_coords, heuristic, spatial_index, dataset, 
+        noisy_route = beautiful_path(G, source_coords, heuristic, spatial_index, dataset,
                                            coords, cutoff, additional_param = 'noise')
-        air_route = beautiful_path(G, source_coords, heuristic, spatial_index, dataset, 
+        air_route = beautiful_path(G, source_coords, heuristic, spatial_index, dataset,
                                            coords, cutoff, additional_param = 'air')
         answer = """[%s, %s, %s]"""%(green_route,noisy_route,air_route)
         return answer
