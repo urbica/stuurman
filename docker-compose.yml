@@ -7,6 +7,7 @@ services:
     restart: unless-stopped
     environment:
       - VIRTUAL_HOST=stuurman.urbica.co
+      - CERT_NAME="" # skip https
     volumes:
       - ./graphs:/usr/src/app/graphs
       - ./logs:/usr/src/app/logs
