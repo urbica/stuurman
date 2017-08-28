@@ -85,7 +85,7 @@ def log_coordinates():
     lat = coordinates['lat']
     lon = coordinates['lon']
     imei = coordinates.get('imei', None)
-    writeLog(coordinates_logs, [lat,lon,imei])
+    writeLog(coordinates_logs, [lat,lon,datetime.datetime.now(),imei])
     return 'ok'
 
 @app.route('/ws', methods=['POST'])
