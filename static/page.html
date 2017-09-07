@@ -28,10 +28,10 @@
     <script>
       var mymap = L.map('mapid').setView([55.75, 37.65], 13);
 
-      // L.tileLayer('https://api.mapbox.com/styles/v1/walkmap/cizpnte4900gh2rplobw8pgu0/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1Ijoid2Fsa21hcCIsImEiOiJjaXI0d285eXIwMDR1aHRtOWQ3YWE3d2JtIn0.pqyo1f-gocUK9i819vmQBQ', {
-      //   maxZoom: 18,
-      //   id: 'mapbox.streets'
-      // }).addTo(mymap);
+      L.tileLayer('https://api.mapbox.com/styles/v1/walkmap/cizpnte4900gh2rplobw8pgu0/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1Ijoid2Fsa21hcCIsImEiOiJjaXI0d285eXIwMDR1aHRtOWQ3YWE3d2JtIn0.pqyo1f-gocUK9i819vmQBQ', {
+        maxZoom: 18,
+        id: 'mapbox.streets'
+      }).addTo(mymap);
 
       function getColor(d) {
         switch (d) {
@@ -191,7 +191,7 @@
               params = {
                 x: startPosition.lng,
                 y: startPosition.lat,
-                start_time: '08:00:00'
+                start_time: '08:00:00',
                 time: 20
               };
               break;
