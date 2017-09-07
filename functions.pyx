@@ -3,10 +3,13 @@ from rtree import index
 from itertools import count
 from collections import deque
 from numpy import arccos, pi
-from shapely.geometry import Point
+import geopandas as gp
+import math
+from shapely.ops import unary_union
+from shapely.geometry import Point, Polygon
 
 def check_point(coordinates, border):
-    if Point(coordinates).intersects(border):
+    if border.contains(Point(coordinates)):
         return True
     else:
         return False
@@ -362,3 +365,110 @@ def beautiful_composite_request(G, source_coords, heuristic, spatial_index, data
 
     except Exception as e:
         return '''{"error":0}'''
+
+
+
+# isochrones functions
+
+def transform_time(x):
+    hour, minute, _ = x.split(':')
+    if hour[0]=='0':
+        hour = int(hour[1])
+    else:
+        hour = int(hour)
+    if minute[0]=='0':
+        minute = int(minute[1])
+    else:
+        minute = int(minute)
+    return hour+minute/60.0
+
+def get_polygon(polygons, dataset):
+    g = gp.GeoDataFrame()
+    geoms = []
+    for points in polygons:
+        if len(points)<3: continue
+        convex_hull = dataset[dataset['id'].isin(points)]['geometry'].values
+        pp = [(x.x,x.y) for x in convex_hull]
+        cent=(sum([p[0] for p in pp])/len(pp),sum([p[1] for p in pp])/len(pp))
+        pp = sorted(pp, key=lambda p: math.atan2(p[1]-cent[1],p[0]-cent[0]))
+        poly = Polygon([x for x in pp])
+        geoms.append(poly)
+    poly = unary_union(geoms)
+    g['geometry'] = [poly]
+    g = g.simplify(0.001)
+    return g.to_json()
+
+
+def find_next_stops(stop_id, start_time, current_time, time_left, routes, routes_on_stops):
+    routes_to_observe = routes_on_stops[stop_id]
+    response = {}
+    end_time = current_time+time_left
+    for route_id, data in routes_to_observe.items():
+        departure = data['time']
+        if departure<current_time or departure>end_time:
+            continue
+        route_data = routes[route_id]
+        stop_sequence = data['sequence']
+        for sequence_id, stop_data in route_data.items():
+            if sequence_id<=stop_sequence:
+                continue
+            stop_id = stop_data['stop_id']
+            departure_time = stop_data['departure_time']
+            if departure_time>end_time:
+                break
+            if departure_time<current_time:
+                continue
+            weight = departure_time-start_time
+            response[stop_id] = weight
+    return response
+
+def isochrone_from_point(G, source_coords, start_time, spatial_index, cutoff, dataset, routes, routes_on_stops, node_stop, stop_node):
+    source = find_nearest_node(source_coords, spatial_index)
+    start_time = transform_time(start_time)
+    dist =  {}
+    fringe = [] 
+    seen =   {source:0}
+    c = count()
+    heappush(fringe, (0, next(c), source))
+    passed_stops = []
+    stops_entries = []
+    polygon_points = []
+    polygons =[]
+    get_weight = lambda x: x.get('time', 1)/60.0
+    get_stop = lambda x: stop_node.get(x, False)
+    get_node = lambda x: node_stop.get(x, False)
+    while fringe:
+        d, _, v = heappop(fringe)
+        if v in dist:
+            continue # already searched this node.
+        if v in stops_entries and polygon_points!=[]:
+            polygons.append(polygon_points)
+            polygon_points = []
+            
+        dist[v] = d
+        for u, e in neighs_iter(v, G):
+            cost = get_weight(e)
+            vu_dist = dist[v] + get_weight(e)
+            
+            if vu_dist > cutoff:
+                polygon_points.append(u)
+                continue
+            
+            stop_id = get_stop(u)
+            if stop_id:
+                if stop_id not in passed_stops:
+                    
+                    passed_stops.append(stop_id)
+                    time_left = cutoff-vu_dist
+                    current_time = start_time+vu_dist
+                    next_stops= find_next_stops(stop_id,start_time,current_time,time_left, routes, routes_on_stops)
+                    for stop_id, distance in next_stops.items():
+                        passed_stops.append(stop_id)
+                        w = get_node(stop_id)
+                        heappush(fringe, (distance, next(c), w))
+                        stops_entries.append(w)
+            elif u not in seen or vu_dist < seen[u]:
+                seen[u] = vu_dist
+                heappush(fringe, (vu_dist, next(c), u))
+
+    return get_polygon(polygons,dataset)

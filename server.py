@@ -2,7 +2,9 @@ import os
 import urllib
 import pickle
 import csv
+import json
 import datetime
+import pandas as pd
 
 from flask import Flask, request
 #from werkzeug.contrib.fixers import ProxyFix
@@ -11,7 +13,7 @@ from support import colorize, set_spatial_index
 import pyximport
 
 pyximport.install()
-from functions import bidirectional_astar, distance, composite_request, beautiful_path, beautiful_composite_request, check_point
+from functions import bidirectional_astar, distance, composite_request, beautiful_path, beautiful_composite_request, check_point, isochrone_from_point, find_nearest_node
 
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -22,15 +24,37 @@ with open(path+'/graphs/nodes_osm.pickle','r') as f:
 with open(path+'/static/border.pickle','r') as f:
     border = pickle.load(f)
 
+with open(path+'/graphs/routes_data.json','r') as f:
+    routes = json.load(f)
+with open(path+'/graphs/routes_on_stop_data.json','r') as f:
+    routes_on_stops = json.load(f)
+stops = pd.read_csv(path+'/graphs/stops.txt')
+
+for x,y in routes_on_stops.items():
+    if type(x)==unicode:
+        routes_on_stops[int(x)]=y
+        del routes_on_stops[x]
+
 print 'starting to collect graph'
 
 nodes = nodes[(nodes['id'].isin(edges['source']))|(nodes['id'].isin(edges['target']))]
 
 coords={}
 for x in range(nodes.shape[0]):
-    coord = (nodes.geometry.values[x].x,nodes.geometry.values[x].y)
-    id = nodes.id.values[x]
+    coord = (nodes['geometry'].values[x].x,nodes['geometry'].values[x].y)
+    id = nodes['id'].values[x]
     coords[id] = coord
+spatial = set_spatial_index(coords)
+
+stop_node = {}
+node_stop = {}
+for x in range(len(stops)):
+    stop_coordinates = stops['stop_lon'].values[x],stops['stop_lat'].values[x]
+    if check_point(stop_coordinates, border):
+        stop_node[find_nearest_node(stop_coordinates, spatial)] = stops['stop_id'].values[x]
+        node_stop[stops['stop_id'].values[x]]=find_nearest_node(stop_coordinates, spatial)
+print 'nodes-stops made'
+
 G = nx.Graph()
 
 edges.green_ratio= edges.green_ratio.apply(lambda x: 1 if x>1 else x)
@@ -51,7 +75,6 @@ for x in range(edges.shape[0]):
     G.add_node(b)
     G.add_edge(a,b, {'weight':w, 'green':w*g, 'noise':w*n, 'air':w*air, 'id':edge_id, 'time':time})
 
-spatial = set_spatial_index(coords)
 edges = edges[['id','color_green','color_noise','color_air','geometry', 'len', 'time']]
 G = G.adj
 
@@ -206,6 +229,14 @@ def beautiful():
         writeLog(beatiful_path_logger, [coordinates[0],coordinates[1],time*4, datetime.datetime.now(),imei,0])
         return point_in_polygon_error
 
+#isochrones
+@app.route('/isochrones', methods=['POST'])
+def mighty_isochrones():
+    keys = request.get_json()
+    coordinates = [keys['x'], keys['y']]
+    start_time = keys['start_time']
+    time = keys['time']/60.0
+    return isochrone_from_point(G, coordinates, start_time, spatial, time, nodes, routes, routes_on_stops, node_stop, stop_node)
 
 #app.wsgi_app = ProxyFix(app.wsgi_app)
 if __name__ == '__main__':

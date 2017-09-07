@@ -8,3 +8,4 @@ Rtree==0.8.2
 pickleshare==0.7.4
 Shapely==1.5.17
 scipy
+pandas

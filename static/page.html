@@ -18,6 +18,11 @@
           <input type="radio" id="circular" name="selector">
           <label for="circular">Погулять и вернуться</label>
         </li>
+
+        <li>
+          <input type="radio" id="isochrone" name="selector">
+          <label for="isochrone">Изохроны ОТ</label>
+        </li>
       </ul>
     </div>
     <script>
@@ -140,6 +145,7 @@
       var beautifulGreenUrl = 'http://stuurman.urbica.co/beautiful_path/green';
       var beautifulNoiseUrl = 'http://stuurman.urbica.co/beautiful_path/noise';
       var beautifulAirUrl = 'http://stuurman.urbica.co/beautiful_path/air';
+      var isochroneUrl = 'http://stuurman.urbica.co/isochrone/ot'
 
       var params = {
         x1: 37.69,
@@ -181,6 +187,15 @@
               };
               break;
             }
+            case 'isochrone': {
+              params = {
+                x: startPosition.lng,
+                y: startPosition.lat,
+                start_time: '08:00:00'
+                time: 20
+              };
+              break;
+            }
             default: {
               return;
             }
@@ -189,10 +204,13 @@
 
           var d = new FormData();
           d.append("json", JSON.stringify(params));
-
-          fetchGreenWay(params, type);
-          fetchNoiseWay(params, type);
-          fetchAirWay(params, type);
+          if (type=='isochrone') {
+          	fetchIsochrone(params, type);
+          } else {
+          	fetchGreenWay(params, type);
+            fetchNoiseWay(params, type);
+            fetchAirWay(params, type);
+          }
         }
       );
 
@@ -215,6 +233,42 @@
           fetchAirWay(params);
         }
       );
+
+      function fetchIsochrone(params, type) {
+        let url = isochroneUrl;
+
+        if(type) {
+          switch(type) {
+            case 'isochrone': {
+              url = isochroneUrl;
+              break;
+            }
+            default: {
+              return;
+            }
+          }
+        }
+
+        fetch(url, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify(params)
+        })
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (resp) {
+            airLayer.clearLayers();
+            underAirLayer.clearLayers();
+            underAirLayer = L.geoJSON(resp.geom, { style: underStyle('#CD5031') }).addTo(mymap);
+            airLayer = L.geoJSON(resp.geom, { style: airStyle }).addTo(mymap);
+          });
+      }
 
       function fetchAirWay(params, type) {
         let url = airUrl;
