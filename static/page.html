@@ -3,7 +3,7 @@
   <head>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
-    <link href="static/style.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
   </head>
   <body>
     <div id="mapid"></div>
@@ -103,6 +103,16 @@
         };
       }
 
+      function isochroneStyle(hex) {
+        return {
+          fillColor: '#CCFFFF',
+          fillOpacity: 0.65,
+          color: '#ff7800',
+          weight: 5,
+          opacity: 0.4
+        };
+      }
+
       let type = 'direct';
 
       const radioBox = document.querySelectorAll('input[name="selector"]');
@@ -120,7 +130,18 @@
             underNoiseLayer.clearLayers();
             underAirLayer.clearLayers();
             underLayer.clearLayers();
+            isochroneLayer.clearLayers();
             type = 'circular';
+          } else  if (e.target.id === 'isochrone') {
+            markerFinish.setOpacity(0);
+            airLayer.clearLayers();
+            noiseLayer.clearLayers();
+            myLayer.clearLayers();
+            underNoiseLayer.clearLayers();
+            underAirLayer.clearLayers();
+            underLayer.clearLayers();
+            isochroneLayer.clearLayers();
+            type = 'isochrone';
           } else {
             markerFinish.setOpacity(1);
             airLayer.clearLayers();
@@ -129,6 +150,7 @@
             underNoiseLayer.clearLayers();
             underAirLayer.clearLayers();
             underLayer.clearLayers();
+            isochroneLayer.clearLayers();
             type = 'direct';
           }
         });
@@ -162,9 +184,11 @@
       var airLayer = L.geoJSON().addTo(mymap);
       var underNoiseLayer = L.geoJSON().addTo(mymap);
       var underAirLayer = L.geoJSON().addTo(mymap);
+      var isochroneLayer = L.geoJSON().addTo(mymap);
 
       markerStart.on('dragend',
         function (event) {
+          console.log(type)
           var marker = event.target;
           var startPosition = marker.getLatLng();
           var params;
@@ -205,9 +229,10 @@
           var d = new FormData();
           d.append("json", JSON.stringify(params));
           if (type=='isochrone') {
-          	fetchIsochrone(params, type);
+            console.log(type)
+            fetchIsochrone(params, type);
           } else {
-          	fetchGreenWay(params, type);
+            fetchGreenWay(params, type);
             fetchNoiseWay(params, type);
             fetchAirWay(params, type);
           }
@@ -263,10 +288,9 @@
             return response.json();
           })
           .then(function (resp) {
-            airLayer.clearLayers();
-            underAirLayer.clearLayers();
-            underAirLayer = L.geoJSON(resp.geom, { style: underStyle('#CD5031') }).addTo(mymap);
-            airLayer = L.geoJSON(resp.geom, { style: airStyle }).addTo(mymap);
+            console.log(resp)
+            isochroneLayer.clearLayers();
+            isochroneLayer = L.geoJSON(resp, { style: isochroneStyle('#CD5031') }).addTo(mymap);
           });
       }
 
