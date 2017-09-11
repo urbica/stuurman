@@ -391,13 +391,12 @@ def get_polygon(polygons, dataset):
         pp = [(x.x,x.y) for x in convex_hull]
         cent=(sum([p[0] for p in pp])/len(pp),sum([p[1] for p in pp])/len(pp))
         pp = sorted(pp, key=lambda p: math.atan2(p[1]-cent[1],p[0]-cent[0]))
-        poly = Polygon([x for x in pp])
+        poly = Polygon(pp)
         geoms.append(poly)
     poly = unary_union(geoms)
     g['geometry'] = [poly]
     g = g.simplify(0.001)
     return g.to_json()
-
 
 def find_next_stops(stop_id, start_time, current_time, time_left, routes, routes_on_stops):
     routes_to_observe = routes_on_stops[stop_id]
