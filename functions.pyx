@@ -2,13 +2,102 @@ from heapq import heappop, heappush
 from rtree import index
 from itertools import count
 from collections import deque
-from numpy import arccos, pi
+from numpy import arccos, pi, percentile
 import geopandas as gp
-import math
 from shapely.ops import unary_union
 from shapely.geometry import Point, Polygon
+import pickle, json, math
+from rtree import index
 
-def check_point(coordinates, border):
+# Data Loading
+def colorize(column):
+    data = []
+    p33 = percentile(column.values, 33)
+    p66 = percentile(column.values, 66)
+    for x in column.values:
+        if x > p66:
+            data.append(3)
+            continue
+        elif x > p33:
+            data.append(2)
+            continue
+        else:
+            data.append(1)
+    return data
+    
+def set_spatial_index(coordinates):
+    p = index.Property()
+    p.dimension = 2
+    ind= index.Index(properties=p)
+    for x,y in zip(coordinates.keys(),coordinates.values()):
+        ind.add(x,y)
+    return ind
+
+path = os.path.dirname(os.path.realpath(__file__))
+
+with open(path+'/graphs/edges_green_noise_air_restrictions.pickle','r') as f:
+    edges = pickle.load(f)
+with open(path+'/graphs/nodes_osm.pickle','r') as f:
+    nodes = pickle.load(f)
+with open(path+'/static/border.pickle','r') as f:
+    border = pickle.load(f)
+
+with open(path+'/graphs/routes_data.json','r') as f:
+    routes = json.load(f)
+with open(path+'/graphs/routes_on_stop_data.json','r') as f:
+    routes_on_stops = json.load(f)
+stops = pd.read_csv(path+'/graphs/stops.txt')
+
+for x,y in routes_on_stops.items():
+    if type(x)==unicode:
+        routes_on_stops[int(x)]=y
+        del routes_on_stops[x]
+
+print 'starting to collect graph'
+
+nodes = nodes[(nodes['id'].isin(edges['source']))|(nodes['id'].isin(edges['target']))]
+
+coords={}
+for x in range(nodes.shape[0]):
+    coord = (nodes['geometry'].values[x].x,nodes['geometry'].values[x].y)
+    id = nodes['id'].values[x]
+    coords[id] = coord
+spatial = set_spatial_index(coords)
+
+stop_node = {}
+node_stop = {}
+for x in range(len(stops)):
+    stop_coordinates = stops['stop_lon'].values[x],stops['stop_lat'].values[x]
+    if check_point(stop_coordinates):
+        stop_node[find_nearest_node(stop_coordinates, spatial)] = stops['stop_id'].values[x]
+        node_stop[stops['stop_id'].values[x]]=find_nearest_node(stop_coordinates, spatial)
+print 'nodes-stops made'
+
+G = nx.Graph()
+
+edges.green_ratio= edges.green_ratio.apply(lambda x: 1 if x>1 else x)
+edges['color_air'] = colorize(edges.air_ratio)
+edges['color_green'] = colorize(edges.green_ratio)
+edges['color_noise'] = colorize(edges.noise_ratio)
+
+for x in range(edges.shape[0]):
+    a = edges.source.values[x]
+    b = edges.target.values[x]
+    w = edges.cost.values[x]
+    g = 1-edges.green_ratio.values[x]
+    n = 1-edges.noise_ratio.values[x]
+    air = 1-edges.air_ratio.values[x]
+    edge_id = edges.id.values[x]
+    time = edges.time.values[x]
+    G.add_node(a)
+    G.add_node(b)
+    G.add_edge(a,b, {'weight':w, 'green':w*g, 'noise':w*n, 'air':w*air, 'id':edge_id, 'time':time})
+
+edges = edges[['id','color_green','color_noise','color_air','geometry', 'len', 'time']]
+G = G.adj
+
+# Router
+def check_point(coordinates):
     if border.contains(Point(coordinates)):
         return True
     else:
@@ -34,17 +123,17 @@ def get_circ(tuple vector1, tuple vector2):
     answer = scal/total_evklid
     return arccos(answer)
 
-def get_vector(long node1,long node2, dict list_of_coords):
+def get_vector(long node1,long node2):
     cdef tuple coords1, coords2
     cdef float x, y
-    coords1 = list_of_coords[node1]
-    coords2 = list_of_coords[node2]
+    coords1 = coords[node1]
+    coords2 = coords[node2]
     x = coords1[0]-coords2[0]
     y = coords1[1]-coords2[1]
     return (x,y)
 
-def find_nearest_node(coordinates, index):
-    nearest = tuple(index.nearest(coordinates, 1))
+def find_nearest_node(coordinates):
+    nearest = tuple(spatial.nearest(coordinates, 1))
     nearest_node = nearest[0]
     return nearest_node
 
@@ -68,9 +157,9 @@ def bigger_bbox(bb):
                 bb[x] = bb[x]+diff_g*d
     return tuple(bb)
 
-def get_path(list_of_edges, dataset, param):
+def get_path(list_of_edges, param):
     if param != 'weight':
-        data = dataset[dataset.id.isin(list_of_edges)]
+        data = edges[edges['id'].isin(list_of_edges)]
         data = data.rename(columns={'color_%s'%param:'color'})
         data = data[['geometry','color']]
         return data.to_json()
@@ -78,8 +167,8 @@ def get_path(list_of_edges, dataset, param):
         data = dataset[dataset.id.isin(list_of_edges)]
         return data.to_json()
 
-def get_response(list_of_edges, dataset, start, param):
-    data = dataset[dataset['id'].isin(list_of_edges)]
+def get_response(list_of_edges, start, param):
+    data = edges[edges['id'].isin(list_of_edges)]
     if param != 'weight':
         data = data.rename(columns={'color_%s'%param:'color'})
         length = round(data['len'].values.sum()/1000,2)
@@ -101,22 +190,19 @@ def get_response(list_of_edges, dataset, start, param):
         answer = """{"start":[%f,%f],"length":%f,"time":%i,"type":"%s","zoom":{"sw":[%f,%f],"ne":[%f,%f]},"geom":%s}"""%json_completer
         return answer
 
-def distance(long p1, long p2, dict coords):
+def distance(long p1, long p2):
     cdef float x1,x2,y1,y2
     x1,y1 = coords[p1]
     x2,y2 = coords[p2]
     return (((x2-x1)**2+(y2-y1)**2)**0.5)*10
 
-def neighs_iter(key, g):
-    for x in g[key].items():
+def neighs_iter(key):
+    for x in G[key].items():
         yield x
 
-def bidirectional_astar(G, source_coords,
-                        target_coords, heuristic,
-                        spatial_index, dataset,
-                        coords, additional_param='weight'):
+def bidirectional_astar(source_coords, target_coords, additional_param='weight'):
 
-    nod = tuple([find_nearest_node(x, spatial_index) for x in [source_coords, target_coords]])
+    nod = tuple([find_nearest_node(x) for x in [source_coords, target_coords]])
     source,target = nod
     start = coords[source]
     queue = [[(0, source, 0, None, None)], [(0, target, 0, None, None)]]
@@ -150,7 +236,7 @@ def bidirectional_astar(G, source_coords,
                 node2 = explored[1-d][node2]
 
             finalpath = list(path1)+list(path2)
-            return get_response(finalpath, dataset, start, additional_param)
+            return get_response(finalpath, start, additional_param)
 
         if v in explored[d]:
             continue
@@ -158,7 +244,7 @@ def bidirectional_astar(G, source_coords,
         explored[d][v] = parent
         edge_parent[d][v] = edge
 
-        for neighbor, w in neighs_iter(v, G):
+        for neighbor, w in neighs_iter(v):
             if len(G[neighbor])==1:
                 continue
             if neighbor in explored[d]:
@@ -169,7 +255,7 @@ def bidirectional_astar(G, source_coords,
                 if qcost <= ncost:
                     continue
             else:
-                h = heuristic(neighbor, heu[d], coords)
+                h = distance(neighbor, heu[d], coords)
 
             enqueued[d][neighbor] = ncost, h
             e = w.get('id',1)
@@ -177,26 +263,19 @@ def bidirectional_astar(G, source_coords,
     raise Exception('Path between given nodes does not exist.')
 
 
-def composite_request(G, source_coords, target_coords, heuristic, spatial_index, dataset, coords):
+def composite_request(source_coords, target_coords):
     try:
-        green_route =  bidirectional_astar(G, source_coords, target_coords,
-                                           heuristic, spatial_index, dataset, coords, additional_param = 'green')
-        noisy_route = bidirectional_astar(G, source_coords, target_coords,
-                                           heuristic, spatial_index, dataset, coords, additional_param = 'noise')
-        air_route = bidirectional_astar(G, source_coords, target_coords,
-                                           heuristic, spatial_index, dataset, coords, additional_param = 'air')
-        answer = """[%s, %s, %s]"""%(green_route,noisy_route,air_route)
+        green_route =  bidirectional_astar(source_coords, target_coords, additional_param = 'green')
+        noisy_route = bidirectional_astar(source_coords, target_coords, additional_param = 'noise')
+        air_route = bidirectional_astar(source_coords, target_coords, additional_param = 'air')
+        answer = """[%s, %s, %s]"""%(green_route, noisy_route, air_route)
         return answer
-
     except Exception as e:
         return '''{"error":0}'''
 
-def _connect_paths(G, source_coords,
-                        target_coords, heuristic,
-                        spatial_index, dataset,
-                        coords, avoid, additional_param='weight'):
+def _connect_paths(source_coords, target_coords, avoid, additional_param='weight'):
 
-    nod = tuple([find_nearest_node(x, spatial_index) for x in [source_coords, target_coords]])
+    nod = tuple([find_nearest_node(x) for x in [source_coords, target_coords]])
     source,target = nod
     queue = [[(0, source, 0, None, None)], [(0, target, 0, None, None)]]
     enqueued = [{},{}]
@@ -229,7 +308,6 @@ def _connect_paths(G, source_coords,
                 node2 = explored[1-d][node2]
 
             finalpath = list(path1)+list(path2)
-
             return finalpath
 
         if v in explored[d]:
@@ -238,7 +316,7 @@ def _connect_paths(G, source_coords,
         explored[d][v] = parent
         edge_parent[d][v] = edge
 
-        for neighbor, w in neighs_iter(v, G):
+        for neighbor, w in neighs_iter(v):
             if len(G[neighbor])==1:
                 continue
             if neighbor in explored[d]:
@@ -251,17 +329,16 @@ def _connect_paths(G, source_coords,
                 if qcost <= ncost:
                     continue
             else:
-                h = heuristic(neighbor, heu[d], coords)
+                h = distance(neighbor, heu[d], coords)
 
             enqueued[d][neighbor] = ncost, h
             e = w.get('id',1)
             heappush(queue[d], (ncost+h, neighbor, ncost, v, e))
     raise Exception('Path between given nodes does not exist.')
 
-def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
-                   cutoff, additional_param = 'weight', avoid = None, first_step = None):
+def beautiful_path(source_coords, cutoff, additional_param = 'weight', avoid = None, first_step = None):
 
-    source = find_nearest_node(source_coords, spatial_index)
+    source = find_nearest_node(source_coords)
     start = coords[source]
     dist =  {}
     paths =  {source:[]}
@@ -281,7 +358,7 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
         weights[v] = k
         params[v] = p
 
-        for neighbor, w in neighs_iter(v, G):
+        for neighbor, w in neighs_iter(v):
             if avoid is not None:
                 if neighbor in avoid:
                     continue
@@ -324,10 +401,9 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
         best = par.pop()
         path1 = paths[best]
         #av1 = int(len(node_paths[best])*0.02)
-        first = get_vector(source, best, coords)
+        first = get_vector(source, best)
 
-        second_step = beautiful_path(G, coords[best], heuristic, spatial_index, dataset, coords,
-                       cutoff, additional_param, avoid = node_paths[best][:-7], first_step = first)
+        second_step = beautiful_path(coords[best], cutoff, additional_param, avoid = node_paths[best][:-7], first_step = first)
 
         target_coords = coords[second_step[1]]
         path2 = second_step[0]
@@ -335,31 +411,26 @@ def beautiful_path(G, source_coords, heuristic, spatial_index, dataset, coords,
         #av2 = int(len(second_step)*0.02)
         to_avoid = node_paths[best][7:]+second_step[:-7]
 
-        path3 = _connect_paths(G,  target_coords, source_coords, heuristic, spatial_index, dataset,
-                                                       coords, to_avoid, additional_param)
+        path3 = _connect_paths(target_coords, source_coords, to_avoid, additional_param)
 
         return get_response(path1+
                             path2+
-                            path3, dataset, start, additional_param)
+                            path3, start, additional_param)
 
     else:
         del params[source]
         while params:
             best = par.pop()
-            best_vect = get_vector(source, best, coords)
+            best_vect = get_vector(source, best)
             if pi*0.15 < get_circ(best_vect, first_step):
                 break
         return paths[best], best, node_paths[best]
 
-def beautiful_composite_request(G, source_coords, heuristic, spatial_index, dataset, coords, cutoff):
-
+def beautiful_composite_request(source_coords, cutoff):
     try:
-        green_route =  beautiful_path(G, source_coords, heuristic, spatial_index, dataset,
-                                           coords, cutoff, additional_param = 'green')
-        noisy_route = beautiful_path(G, source_coords, heuristic, spatial_index, dataset,
-                                           coords, cutoff, additional_param = 'noise')
-        air_route = beautiful_path(G, source_coords, heuristic, spatial_index, dataset,
-                                           coords, cutoff, additional_param = 'air')
+        green_route =  beautiful_path(source_coords, cutoff, additional_param = 'green')
+        noisy_route = beautiful_path(source_coords, cutoff, additional_param = 'noise')
+        air_route = beautiful_path(source_coords, cutoff, additional_param = 'air')
         answer = """[%s, %s, %s]"""%(green_route,noisy_route,air_route)
         return answer
 
@@ -369,7 +440,6 @@ def beautiful_composite_request(G, source_coords, heuristic, spatial_index, data
 
 
 # isochrones functions
-
 def transform_time(x):
     hour, minute, _ = x.split(':')
     if hour[0]=='0':
@@ -382,12 +452,12 @@ def transform_time(x):
         minute = int(minute)
     return hour+minute/60.0
 
-def get_polygon(polygons, dataset):
+def get_polygon(polygons):
     g = gp.GeoDataFrame()
     geoms = []
     for points in polygons:
         if len(points)<3: continue
-        convex_hull = dataset[dataset['id'].isin(points)]['geometry'].values
+        convex_hull = nodes[nodes['id'].isin(points)]['geometry'].values
         pp = [(x.x,x.y) for x in convex_hull]
         cent=(sum([p[0] for p in pp])/len(pp),sum([p[1] for p in pp])/len(pp))
         pp = sorted(pp, key=lambda p: math.atan2(p[1]-cent[1],p[0]-cent[0]))
@@ -398,7 +468,7 @@ def get_polygon(polygons, dataset):
     g = g.simplify(0.001)
     return g.to_json()
 
-def find_next_stops(stop_id, start_time, current_time, time_left, routes, routes_on_stops):
+def find_next_stops(stop_id, start_time, current_time, time_left):
     routes_to_observe = routes_on_stops[stop_id]
     response = {}
     end_time = current_time+time_left
@@ -421,8 +491,8 @@ def find_next_stops(stop_id, start_time, current_time, time_left, routes, routes
             response[stop_id] = weight
     return response
 
-def isochrone_from_point(G, source_coords, start_time, spatial_index, cutoff, dataset, routes, routes_on_stops, node_stop, stop_node):
-    source = find_nearest_node(source_coords, spatial_index)
+def isochrone_from_point(source_coords, start_time, cutoff):
+    source = find_nearest_node(source_coords)
     start_time = transform_time(start_time)
     dist =  {}
     fringe = [] 
@@ -460,7 +530,7 @@ def isochrone_from_point(G, source_coords, start_time, spatial_index, cutoff, da
                     passed_stops.append(stop_id)
                     time_left = cutoff-vu_dist
                     current_time = start_time+vu_dist
-                    next_stops= find_next_stops(stop_id,start_time,current_time,time_left, routes, routes_on_stops)
+                    next_stops= find_next_stops(stop_id, start_time, current_time, time_left)
                     for stop_id, distance in next_stops.items():
                         passed_stops.append(stop_id)
                         w = get_node(stop_id)
@@ -470,4 +540,4 @@ def isochrone_from_point(G, source_coords, start_time, spatial_index, cutoff, da
                 seen[u] = vu_dist
                 heappush(fringe, (vu_dist, next(c), u))
 
-    return get_polygon(polygons,dataset)
+    return get_polygon(polygons)
