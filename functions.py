@@ -59,6 +59,9 @@ nodes = gp.GeoDataFrame(nodes)
 with open(path+'/static/border.pickle','r') as f:
     border = pickle.load(f)
 
+steps = json.load(open(path+'/static/steps_in_graph.json'))
+edges['steps'] = edges['id'].apply(lambda x: 1 if x in steps else 0)
+
 
 with open(path+'/graphs/routes_data.json','r') as f:
     routes = json.load(f)
@@ -107,9 +110,10 @@ for x in range(edges.shape[0]):
     air = 1-edges.air_ratio.values[x]
     edge_id = edges.id.values[x]
     time = edges.time.values[x]
+    has_steps = edges['steps'].values[x]
     G.add_node(a)
     G.add_node(b)
-    G.add_edge(a,b, {'weight':w, 'green':w*g, 'noise':w*n, 'air':w*air, 'id':edge_id, 'time':time})
+    G.add_edge(a,b, {'weight':w, 'green':w*g, 'noise':w*n, 'air':w*air, 'id':edge_id, 'time':time, 'steps':has_steps})
 
 edges = edges[['id','color_green','color_noise','color_air','geometry', 'len', 'time']]
 G = G.adj
@@ -202,7 +206,7 @@ def neighs_iter(key):
     for x in G[key].items():
         yield x
 
-def bidirectional_astar(source_coords, target_coords, additional_param='weight', avoid_edges=None):
+def bidirectional_astar(source_coords, target_coords, additional_param='weight', step_mode=False):
 
     nod = tuple([find_nearest_node(x) for x in [source_coords, target_coords]])
     source,target = nod
@@ -247,8 +251,8 @@ def bidirectional_astar(source_coords, target_coords, additional_param='weight',
         edge_parent[d][v] = edge
 
         for neighbor, w in neighs_iter(v):
-            if avoid_edges is not None:
-                if w.get('id',1) in avoid_edges:
+            if step_mode:
+                if w.get('steps',None) == 1:
                     continue
             if len(G[neighbor])==1:
                 continue

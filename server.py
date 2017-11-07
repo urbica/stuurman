@@ -13,8 +13,6 @@ beatiful_path_logger= path+'/logs/logs_get_back.csv'
 bidirectional_astar_logger= path+'/logs/logs_a_b.csv'
 coordinates_logs = path+'/logs/logs_coords.csv'
 
-steps = json.load(open(path+'/static/steps_in_graph.json'))
-
 def writeLog(file, data):
     with open(file,'a') as fi:
         logger = csv.writer(fi)
@@ -74,7 +72,7 @@ def bike_route():
     coords1 = [keys['x1'], keys['y1']]
     coords2 = [keys['x2'], keys['y2']]
     if check_point(coords1) and check_point(coords2):
-        return bidirectional_astar(coords1, coords2, avoid_edges=steps)
+        return bidirectional_astar(coords1, coords2, step_mode=True)
     else:
         return point_in_polygon_error
 
