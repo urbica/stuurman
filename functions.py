@@ -202,7 +202,7 @@ def neighs_iter(key):
     for x in G[key].items():
         yield x
 
-def bidirectional_astar(source_coords, target_coords, additional_param='weight'):
+def bidirectional_astar(source_coords, target_coords, additional_param='weight', avoid_edges=None):
 
     nod = tuple([find_nearest_node(x) for x in [source_coords, target_coords]])
     source,target = nod
@@ -247,6 +247,9 @@ def bidirectional_astar(source_coords, target_coords, additional_param='weight')
         edge_parent[d][v] = edge
 
         for neighbor, w in neighs_iter(v):
+            if avoid_edges is not None:
+                if w.get('id',1) in avoid_edges:
+                    continue
             if len(G[neighbor])==1:
                 continue
             if neighbor in explored[d]:

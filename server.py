@@ -1,7 +1,4 @@
-import os
-import urllib
-import csv
-import datetime
+import os, datetime, urllib, csv, datetime, json
 import pandas as pd
 from flask import Flask, request
 
@@ -15,6 +12,8 @@ path = os.path.dirname(os.path.realpath(__file__))
 beatiful_path_logger= path+'/logs/logs_get_back.csv'
 bidirectional_astar_logger= path+'/logs/logs_a_b.csv'
 coordinates_logs = path+'/logs/logs_coords.csv'
+
+steps = json.load(open(path+'/static/steps_in_graph.json'))
 
 def writeLog(file, data):
     with open(file,'a') as fi:
@@ -66,6 +65,16 @@ def shortest_route():
     coords2 = [keys['x2'], keys['y2']]
     if check_point(coords1) and check_point(coords2):
         return bidirectional_astar(coords1, coords2)
+    else:
+        return point_in_polygon_error
+
+@app.route('/bike_path', methods=['POST'])
+def bike_route():
+    keys = request.get_json()
+    coords1 = [keys['x1'], keys['y1']]
+    coords2 = [keys['x2'], keys['y2']]
+    if check_point(coords1) and check_point(coords2):
+        return bidirectional_astar(coords1, coords2, avoid_edges=steps)
     else:
         return point_in_polygon_error
 
