@@ -171,7 +171,7 @@ def get_path(list_of_edges, param):
         data = data[['geometry','color']]
         return data.to_json()
     else:
-        data = dataset[dataset.id.isin(list_of_edges)]
+        data = edges[edges['id'].isin(list_of_edges)]
         return data.to_json()
 
 def get_response(list_of_edges, start, param):
