@@ -2,8 +2,8 @@ import os, datetime, urllib, csv, datetime, json
 import pandas as pd
 from flask import Flask, request
 
-#import pyximport
-#pyximport.install()
+import pyximport
+pyximport.install()
 
 from functions import bidirectional_astar, distance, composite_request, beautiful_path, beautiful_composite_request, check_point, isochrone_from_point
 

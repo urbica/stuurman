@@ -3,13 +3,11 @@ from rtree import index
 from itertools import count
 from collections import deque
 from numpy import arccos, pi, percentile
+import geopandas as gp
 from shapely.ops import unary_union
 from shapely.geometry import Point, Polygon
-import pickle, json, math, os
+import pickle, json, math
 from rtree import index
-import networkx as nx
-import pandas as pd
-import geopandas as gp
 
 # Data Loading
 def colorize(column):
@@ -35,33 +33,14 @@ def set_spatial_index(coordinates):
         ind.add(x,y)
     return ind
 
-def check_point(coordinates):
-    if border.contains(Point(coordinates)):
-        return True
-    else:
-        return False
-
-def find_nearest_node(coordinates):
-    nearest = tuple(spatial.nearest(coordinates, 1))
-    nearest_node = nearest[0]
-    return nearest_node
-
 path = os.path.dirname(os.path.realpath(__file__))
 
-# with open(path+'/graphs/edges_green_noise_air_restrictions.pickle','r') as f:
-#     edges = pickle.load(f)
-# with open(path+'/graphs/nodes_osm.pickle','r') as f:
-#     nodes = pickle.load(f)
-edges = pd.read_pickle(path+'/graphs/edges_green_noise_air_restrictions.pickle')
-edges = gp.GeoDataFrame(edges)
-nodes = pd.read_pickle(path+'/graphs/nodes_osm.pickle')
-nodes = gp.GeoDataFrame(nodes)
+with open(path+'/graphs/edges_green_noise_air_restrictions.pickle','r') as f:
+    edges = pickle.load(f)
+with open(path+'/graphs/nodes_osm.pickle','r') as f:
+    nodes = pickle.load(f)
 with open(path+'/static/border.pickle','r') as f:
     border = pickle.load(f)
-
-steps = json.load(open(path+'/static/steps_in_graph.json'))
-edges['steps'] = edges['id'].apply(lambda x: 1 if x in steps else 0)
-
 
 with open(path+'/graphs/routes_data.json','r') as f:
     routes = json.load(f)
@@ -90,8 +69,8 @@ node_stop = {}
 for x in range(len(stops)):
     stop_coordinates = stops['stop_lon'].values[x],stops['stop_lat'].values[x]
     if check_point(stop_coordinates):
-        stop_node[find_nearest_node(stop_coordinates)] = stops['stop_id'].values[x]
-        node_stop[stops['stop_id'].values[x]]=find_nearest_node(stop_coordinates)
+        stop_node[find_nearest_node(stop_coordinates, spatial)] = stops['stop_id'].values[x]
+        node_stop[stops['stop_id'].values[x]]=find_nearest_node(stop_coordinates, spatial)
 print 'nodes-stops made'
 
 G = nx.Graph()
@@ -110,39 +89,53 @@ for x in range(edges.shape[0]):
     air = 1-edges.air_ratio.values[x]
     edge_id = edges.id.values[x]
     time = edges.time.values[x]
-    has_steps = edges['steps'].values[x]
     G.add_node(a)
     G.add_node(b)
-    G.add_edge(a,b, {'weight':w, 'green':w*g, 'noise':w*n, 'air':w*air, 'id':edge_id, 'time':time, 'steps':has_steps})
+    G.add_edge(a,b, {'weight':w, 'green':w*g, 'noise':w*n, 'air':w*air, 'id':edge_id, 'time':time})
 
 edges = edges[['id','color_green','color_noise','color_air','geometry', 'len', 'time']]
 G = G.adj
 
 # Router
-def check_similarity(l,l2):
+def check_point(coordinates):
+    if border.contains(Point(coordinates)):
+        return True
+    else:
+        return False
+
+def check_similarity(list l,list l2):
     i =  len(set(l2)-set(l))
     i2 =  len(set(l)-set(l2))
     if i/len(l2) > 0.9 or i2/len(l2) > 0.9:
         return True
     return False
 
-def vector_dist(vector):
+def vector_dist(tuple vector):
+    cdef float d
     d = vector[0]**2+vector[1]**2
     return d**0.5
 
-def get_circ(vector1, vector2):
+def get_circ(tuple vector1, tuple vector2):
+    cdef float scal, evklid1, evklid2, total_evklid, answer
     scal = vector1[0]*vector2[0]+vector1[1]*vector2[1]
     evklid1,evklid2  = [vector_dist(vect) for vect in (vector1, vector2)]
     total_evklid = evklid1*evklid2
     answer = scal/total_evklid
     return arccos(answer)
 
-def get_vector(node1, node2):
+def get_vector(long node1,long node2):
+    cdef tuple coords1, coords2
+    cdef float x, y
     coords1 = coords[node1]
     coords2 = coords[node2]
     x = coords1[0]-coords2[0]
     y = coords1[1]-coords2[1]
     return (x,y)
+
+def find_nearest_node(coordinates):
+    nearest = tuple(spatial.nearest(coordinates, 1))
+    nearest_node = nearest[0]
+    return nearest_node
 
 def bigger_bbox(bb):
     diff_v = (bb[2]- bb[0])*0.5
@@ -197,7 +190,8 @@ def get_response(list_of_edges, start, param):
         answer = """{"start":[%f,%f],"length":%f,"time":%i,"type":"%s","zoom":{"sw":[%f,%f],"ne":[%f,%f]},"geom":%s}"""%json_completer
         return answer
 
-def distance(p1, p2):
+def distance(long p1, long p2):
+    cdef float x1,x2,y1,y2
     x1,y1 = coords[p1]
     x2,y2 = coords[p2]
     return (((x2-x1)**2+(y2-y1)**2)**0.5)*10
@@ -206,7 +200,7 @@ def neighs_iter(key):
     for x in G[key].items():
         yield x
 
-def bidirectional_astar(source_coords, target_coords, additional_param='weight', step_mode=False):
+def bidirectional_astar(source_coords, target_coords, additional_param='weight'):
 
     nod = tuple([find_nearest_node(x) for x in [source_coords, target_coords]])
     source,target = nod
@@ -251,9 +245,6 @@ def bidirectional_astar(source_coords, target_coords, additional_param='weight',
         edge_parent[d][v] = edge
 
         for neighbor, w in neighs_iter(v):
-            if step_mode:
-                if w.get('steps',None) == 1:
-                    continue
             if len(G[neighbor])==1:
                 continue
             if neighbor in explored[d]:
@@ -264,7 +255,7 @@ def bidirectional_astar(source_coords, target_coords, additional_param='weight',
                 if qcost <= ncost:
                     continue
             else:
-                h = distance(neighbor, heu[d])
+                h = distance(neighbor, heu[d], coords)
 
             enqueued[d][neighbor] = ncost, h
             e = w.get('id',1)
@@ -338,7 +329,7 @@ def _connect_paths(source_coords, target_coords, avoid, additional_param='weight
                 if qcost <= ncost:
                     continue
             else:
-                h = distance(neighbor, heu[d])
+                h = distance(neighbor, heu[d], coords)
 
             enqueued[d][neighbor] = ncost, h
             e = w.get('id',1)
@@ -446,6 +437,8 @@ def beautiful_composite_request(source_coords, cutoff):
     except Exception as e:
         return '''{"error":0}'''
 
+
+
 # isochrones functions
 def transform_time(x):
     hour, minute, _ = x.split(':')
@@ -459,22 +452,26 @@ def transform_time(x):
         minute = int(minute)
     return hour+minute/60.0
 
-def get_polygon(points):
-    if len(points)<3:
-        return None
-    convex_hull = nodes[nodes['id'].isin(points)]['geometry'].values
-    pp = [(x.x,x.y) for x in convex_hull]
-    cent=(sum([p[0] for p in pp])/len(pp),sum([p[1] for p in pp])/len(pp))
-    pp = sorted(pp, key=lambda p: math.atan2(p[1]-cent[1],p[0]-cent[0]))
-    if len(pp)<3:
-        return None
-    poly = Polygon(pp)
-    return poly
+def get_polygon(polygons):
+    g = gp.GeoDataFrame()
+    geoms = []
+    for points in polygons:
+        if len(points)<3: continue
+        convex_hull = nodes[nodes['id'].isin(points)]['geometry'].values
+        pp = [(x.x,x.y) for x in convex_hull]
+        cent=(sum([p[0] for p in pp])/len(pp),sum([p[1] for p in pp])/len(pp))
+        pp = sorted(pp, key=lambda p: math.atan2(p[1]-cent[1],p[0]-cent[0]))
+        poly = Polygon(pp)
+        geoms.append(poly)
+    poly = unary_union(geoms)
+    g['geometry'] = [poly]
+    g = g.simplify(0.001)
+    return g.to_json()
 
-def find_next_stops(stop_id, start_time, current_time, cutoff):
+def find_next_stops(stop_id, start_time, current_time, time_left):
     routes_to_observe = routes_on_stops[stop_id]
     response = {}
-    end_time = start_time+cutoff
+    end_time = current_time+time_left
     for route_id, data in routes_to_observe.items():
         departure = data['time']
         if departure<current_time or departure>end_time:
@@ -486,73 +483,61 @@ def find_next_stops(stop_id, start_time, current_time, cutoff):
                 continue
             stop_id = stop_data['stop_id']
             departure_time = stop_data['departure_time']
-            if departure_time<departure:
-                continue
             if departure_time>end_time:
                 break
+            if departure_time<current_time:
+                continue
             weight = departure_time-start_time
             response[stop_id] = weight
     return response
 
-def collect_polygons(list_of_polygons):
-    geoms = []
-    for poly_points in list_of_polygons:
-        poly = get_polygon(poly_points)
-        if poly is not None:
-            geoms.append(poly)
-    geoms = unary_union(geoms)
-    g = gp.GeoDataFrame()
-    g['geometry'] = [geoms]
-    g = g.simplify(0.001)
-    return g.to_json()
-
 def isochrone_from_point(source_coords, start_time, cutoff):
     source = find_nearest_node(source_coords)
     start_time = transform_time(start_time)
-
     dist =  {}
-    fringe = []
+    fringe = [] 
     seen =   {source:0}
     c = count()
     heappush(fringe, (0, next(c), source))
-
-    polygons = []
-    stops_to_observe=[]
-
+    passed_stops = []
+    stops_entries = []
+    polygon_points = []
+    polygons =[]
     get_weight = lambda x: x.get('time', 1)/60.0
     get_stop = lambda x: stop_node.get(x, False)
     get_node = lambda x: node_stop.get(x, False)
-    while True:
-        polygon_points = []
-        while fringe:
-            d, _, v = heappop(fringe)
-            if v in dist:
-                continue # already searched this node.
-            dist[v] = d
-            for u, e in neighs_iter(v):
-                cost = get_weight(e)
-                vu_dist = dist[v] + get_weight(e)
-
-                if vu_dist > cutoff:
-                    polygon_points.append(u)
-                    continue
-
-                stop_id = get_stop(u)
-                if stop_id:
+    while fringe:
+        d, _, v = heappop(fringe)
+        if v in dist:
+            continue # already searched this node.
+        if v in stops_entries and polygon_points!=[]:
+            polygons.append(polygon_points)
+            polygon_points = []
+            
+        dist[v] = d
+        for u, e in neighs_iter(v, G):
+            cost = get_weight(e)
+            vu_dist = dist[v] + get_weight(e)
+            
+            if vu_dist > cutoff:
+                polygon_points.append(u)
+                continue
+            
+            stop_id = get_stop(u)
+            if stop_id:
+                if stop_id not in passed_stops:
+                    
+                    passed_stops.append(stop_id)
+                    time_left = cutoff-vu_dist
                     current_time = start_time+vu_dist
-                    next_stops= find_next_stops(stop_id, start_time, current_time, cutoff)
+                    next_stops= find_next_stops(stop_id, start_time, current_time, time_left)
                     for stop_id, distance in next_stops.items():
+                        passed_stops.append(stop_id)
                         w = get_node(stop_id)
-                        if w:
-                            stops_to_observe.append((w, distance))
-                elif u not in seen or vu_dist < seen[u]:
-                    seen[u] = vu_dist
-                    heappush(fringe, (vu_dist, next(c), u))
+                        heappush(fringe, (distance, next(c), w))
+                        stops_entries.append(w)
+            elif u not in seen or vu_dist < seen[u]:
+                seen[u] = vu_dist
+                heappush(fringe, (vu_dist, next(c), u))
 
-        polygons.append(polygon_points)
-        if stops_to_observe==[]:
-            return collect_polygons(polygons)
-        else:
-            s,d = stops_to_observe.pop(0)
-            heappush(fringe, (d, next(c), s))
-
+    return get_polygon(polygons)
